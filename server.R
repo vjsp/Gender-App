@@ -1,9 +1,9 @@
 ## server.R ##
-source("./global.R")
+#source("./global.R")
 
 function(input, output, session) {
 
-  reative_rc = reactive({
+  reactive_rc = reactive({
     req(input$mymap_shape_click)
     
     radarchart_data <- as.data.frame(reactive_db()) %>%
@@ -14,6 +14,21 @@ function(input, output, session) {
     radarchart_data[,1] <- NULL
     radarchart_data <- rbind(rep(100,6) , rep(0,6) , radarchart_data)
     radarchart_data
+  })
+  
+  reactive_rc2 = reactive({
+    req(input$mymap_shape_click)
+    
+    radarchart_data <- as.data.frame(reactive_db()) %>%
+      filter(alpha.3 == country_selected()) %>%
+      select("Country", ends_with("(Domain score)")) %>%
+      rename_with(~ gsub(' (Domain score)', '', .x, fixed=TRUE))
+    rownames(radarchart_data) <- radarchart_data[,1]
+    radarchart_data[,1] <- NULL
+    radarchart_data <- t(radarchart_data)
+    radarchart_data <- data.frame(Domain = row.names(radarchart_data),
+                                  radarchart_data, row.names = NULL)
+    #radarchart_data <- tibble::rownames_to_column(radarchart_data, "Country") 
   })
   
   country_selected <- reactive({
@@ -81,7 +96,7 @@ function(input, output, session) {
   })
   
   output$radarPlot <- renderPlot({
-    radarchart(reative_rc(),
+    radarchart(reactive_rc(),
                # Customize the polygon
                pcol = my_pal(reactive_chart_color()$`Overall Gender Equality Index`),
                pfcol = scales::alpha(my_pal(reactive_chart_color()$`Overall Gender Equality Index`),
@@ -90,5 +105,17 @@ function(input, output, session) {
                cglcol = "grey", cglty = 1, cglwd = 0.8,
                # Customize the axis
                axislabcol = "grey"
+    )})
+  
+  output$radarPlot2 <- renderChartJSRadar({
+    chartJSRadar(reactive_rc2(),
+                 colMatrix = matrix(c(col2rgb(my_pal(reactive_chart_color()$`Overall Gender Equality Index`)))),
+                 polyAlpha = 0.4,
+                 responsive = TRUE,
+                 labelSize = 12,
+                 showLegend = FALSE,
+                 main = paste("Gender Equality Index: ", reactive_chart_color()$`Overall Gender Equality Index`)
+                 
+               
     )})
 }
