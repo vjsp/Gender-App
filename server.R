@@ -69,7 +69,7 @@ function(input, output, session) {
                     fillOpacity = 0.5,
                     bringToFront = TRUE),
                   smoothFactor = 0.1,
-                  fillOpacity = 0.15,
+                  fillOpacity = 0.2,
                   fillColor = ~my_pal(reactive_db_large()$`Overall Gender Equality Index`),
                   layerId = reactive_polygons()@data$adm0_a3,
                   label = paste(

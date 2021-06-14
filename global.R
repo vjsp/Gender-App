@@ -40,8 +40,8 @@ basemap <- leaflet(plot_map) %>%
   addProviderTiles(providers$CartoDB.Positron,
                    options = providerTileOptions(noWrap = TRUE)
   ) %>%
-  addLegend("bottomright",
+  addLegend("bottomleft",
             pal = my_pal,
             values = ~cv_large_countries$`Overall Gender Equality Index`,
             title = "<small>GEI</small>") %>%
-  setView(8.44, 56.00, 3)
+  setView(30.44, 56.00, 3)

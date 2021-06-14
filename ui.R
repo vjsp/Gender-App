@@ -39,7 +39,7 @@ dashboardPage(
         # ),
 
           #box(leafletOutput("mymap")),
-          div(class="outer",
+          div(class="outer", height = "100%",
               leafletOutput("mymap"),
               absolutePanel(id = "map_indicator_panel",
                 top = 10,
@@ -51,12 +51,20 @@ dashboardPage(
                             choices = gei_indicators_df["Indicator"],
                             width = "80%"
                 )
+              ),
+              absolutePanel(id = "map_graphs",
+                            top = 100,
+                            draggable = TRUE,
+                            width = "30%",
+                            right = 0,
+                            div("EU-28"),
+                            chartJSRadarOutput("radarPlot2", height = "250"),
               )
           ),
-        fluidRow(
-          box(chartJSRadarOutput("radarPlot2", height = "250")),
-          box(plotOutput('radarPlot', height="250"))
-        )
+        # fluidRow(
+        #   box(chartJSRadarOutput("radarPlot2", height = "250")),
+        #   box(plotOutput('radarPlot', height="250"))
+        # )
       )
     )
   )
