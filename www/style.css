@@ -28,3 +28,32 @@
   background-color: white;
   opacity: 0.7;
 }
+
+.selectize-input > * {
+  width: 90%;
+}
+
+.selectize-dropdown [data-value='GEI'] {
+  color: red;
+  font-weight: bold;
+  font-family: Verdana;
+  text-transform: uppercase;
+}
+
+.selectize-dropdown [data-value^='D'] {
+  color: rgba(50, 50, 50, 0.8);
+  font-weight: bold;
+  font-family: Verdana;
+  text-transform: uppercase;
+}
+
+.selectize-dropdown [data-value^='S'] {
+  color: rgba(40, 40, 40, 0.8);
+  font-weight: bold;
+  font-family: Verdana;
+}
+
+.selectize-dropdown [data-value^='I'] {
+  color: rgba(30, 30, 30, 0.8);
+  font-family: Verdana;
+}

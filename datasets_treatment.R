@@ -1,20 +1,38 @@
 ## Datasets treatment ##
 
-## Libraries
-library(openxlsx)
-library(dplyr)
-library(tidyr)
+### Libraries
+# Define used repositories
+default_repos = "http://cran.us.r-project.org"
+# Install and load necessary libraries
+if(!require(dplyr)) install.packages("dplyr", repos = default_repos)
+if(!require(geojsonio)) install.packages("geojsonio", repos = default_repos)
+if(!require(openxlsx)) install.packages("openxlsx", repos = default_repos)
+if(!require(tidyr)) install.packages("tidyr", repos = default_repos)
 
-## Variables
-file_path <- "./data/Gender_Equality_Index.xlsx"
+
+
+### Variables
+# Path to GEI data original excel file
+gei_file_path <- "./data/Gender_Equality_Index.xlsx"
+# Path to world geodata json file
+geo_file_path <- "./data/world.geo.json"
 # Mapping beetween data and GEI years
-year_mapping = list('2010' = 2013,
-                    '2012' = 2015,
-                    '2015' = 2017,
-                    '2017' = 2019,
-                    '2018' = 2020)
+year_mapping <- list("2010" = 2013,
+                     "2012" = 2015,
+                     "2015" = 2017,
+                     "2017" = 2019,
+                     "2018" = 2020)
+# Countries code mapping
+country_code_mapping <- list("UK" = "GB",
+                             "EL" = "GR")
+# Additional EU regions
+eu_regions_df <- data.frame("Country code" = "EU28",
+                            Country = "European Union 28",
+                            check.names = FALSE)
 
-## Functions
+
+
+### Functions
 # Function to read all sheets from excel file
 # @param xlsxFile - File with .xlsx extension
 # @return A list of dataframes
@@ -28,39 +46,134 @@ read_all_sheets = function(xlsxFile, ...) {
   return(sheet_list)
 }
 
-## Main
-# Read excel file
-gei_file_data <- read_all_sheets(file_path, sep.names = " ",
-                                 fillMergedCells = TRUE)
 
-# Build GEI metadata dataframe
-orig_metadata_df <- data.frame(gei_file_data['Metadata'])
-colnames(orig_metadata_df) <- paste0("X",1:ncol(orig_metadata_df))
-gei_metadata_df <- orig_metadata_df[0:5] %>%
+
+### Main
+## Read excel file
+gei_file_data <- read_all_sheets(gei_file_path, sep.names = " ",
+                                 fillMergedCells = TRUE)
+world_geo_data <- geojson_read("data/world.geo.json", what = "sp")
+
+
+## Build countries dataframe
+countries_df <- data.frame("Country code" = world_geo_data$iso_a2,
+                           Country = world_geo_data$name,
+                           check.names = FALSE) %>%
+  rbind(eu_regions_df)
+  
+
+
+## Build GEI metadata dataframe
+gei_metadata_df <- data.frame(gei_file_data["Metadata"]) %>%
+  # Remove unnecessary columns and duplicates
+  `colnames<-`(paste0("X", 1:ncol(.))) %>%
+  select(c(0:5)) %>%
   unique() %>%
   group_by(X1, X2, X3, X4) %>%
   mutate(X5 = paste0(X5, collapse = "")) %>%
-  unique()
-names(gei_metadata_df) <- gei_metadata_df[1,]
-gei_metadata_df <- gei_metadata_df[-1,]
-gei_metadata_df <- rename(gei_metadata_df,
-                          Indicator = "Indicator and reference population")
+  unique() %>%
+  # Set column names and remove those with unnecessary info (header and
+  # additional variable)
+  `colnames<-`(.[1,]) %>%
+  ungroup() %>%
+  slice(-c(1,nrow(.))) %>%
+  rename(Indicator = "Indicator and reference population")
+# Save df as RDS
+saveRDS(gei_metadata_df, file = "data/GEI_metadata.rds")
 
-# Build GEI data dataframe
-gei_data <- gei_file_data[-which(names(gei_file_data) == "Metadata")]
-gei_data_df <- bind_rows(gei_data, .id = "Year")
-gei_data_df$Year <- year_mapping[gei_data_df$Year]
-  
-# Build GEI indicators list
+
+## Build GEI data dataframe
+gei_data_df <- gei_file_data[-which(names(gei_file_data) == "Metadata")] %>%
+  # Put all years data into a single df
+  bind_rows(.id = "Year") %>%
+  # Replace data years with GEI years and align country code with ISO
+  mutate(Year = unlist(year_mapping[Year]),
+         Country = ifelse(Country %in% names(country_code_mapping),
+                          unlist(country_code_mapping[Country] %>% 
+                                   replace(.=="NULL", NA)),
+                          Country)) %>%
+  rename("Country code" = Country) %>%
+  # Add country names
+  merge(countries_df, by = "Country code")
+# Save df as RDS
+saveRDS(gei_data_df, file = "data/GEI_data.rds")
+           
+
+## Build GEI indicators dataframe
+# Create a df with all levels indicators from metadata
 gei_indicators_df <- gei_metadata_df %>%
   ungroup() %>%
-  select('Domain', 'Subdomain', 'Indicator')
+  select(Domain, Subdomain, Indicator)
 indicators <- NULL
 for (i in 1:nrow(gei_indicators_df)) {
-  indicators <- c(indicators,gei_indicators_df[i,])
+  indicators <- c(indicators, gei_indicators_df[i, ])
 }
 gei_indicators_df <- data.frame(Type = names(indicators),
                                 Indicator = unlist(indicators)) %>%
-  unique()
-rownames(gei_indicators_df) <- NULL #Regenerate index
+  unique() %>%
+  add_row(Type = "Index", Indicator = "Gender Equality Index", .before = 1)
 
+# Add Id and Parent Id columns
+id_column <- NULL
+parent_id_column <- NULL
+id <- NULL
+parent_id <- NULL
+d_counter <- 0
+s_counter <- 0
+i_counter <- 0
+for (i in 1:nrow(gei_indicators_df)) {
+  switch(gei_indicators_df[i, "Type"],
+         "Index" = {
+           id <- "GEI"
+           parent_id <- NA_character_
+         },
+         "Domain" = {
+           d_counter <- d_counter + 1
+           s_counter <- 0
+           i_counter <- 0
+           id <- paste0("D", d_counter)
+           parent_id <- "GEI"
+         },
+         "Subdomain" = {
+           s_counter <- s_counter + 1
+           i_counter <- 0
+           id <- paste0("S", d_counter, s_counter)
+           parent_id <- paste0("D", d_counter)
+         },
+         "Indicator" = {
+           i_counter <- i_counter + 1
+           id <- paste0("I", d_counter, s_counter, i_counter)
+           parent_id <- paste0("S", d_counter, s_counter)
+         }
+  )
+  id_column <- c(id_column, id)
+  parent_id_column <- c(parent_id_column, parent_id)
+}
+gei_indicators_df %<>% mutate(Id = id_column,
+                            "Parent Id" = parent_id_column)
+
+# Include gender metrics
+for (i in 1:nrow(gei_indicators_df)) {
+  if(gei_indicators_df[i, "Type"] == "Indicator") {
+    gei_indicators_df <- gei_indicators_df %>%
+      add_row(Type = "Metric",
+              Indicator = paste0(gei_indicators_df[i, "Indicator"], " W"),
+              Id = gsub("I", "M", paste0(gei_indicators_df[i, "Id"], "W")),
+              "Parent Id" = gei_indicators_df[i, "Id"]) %>%
+      add_row(Type = "Metric",
+              Indicator = paste0(gei_indicators_df[i, "Indicator"], " M"),
+              Id = gsub("I", "M", paste0(gei_indicators_df[i, "Id"], "M")),
+              "Parent Id" = gei_indicators_df[i, "Id"]) %>%
+      add_row(Type = "Metric",
+              Indicator = paste0(gei_indicators_df[i, "Indicator"], " T"),
+              Id = gsub("I", "M", paste0(gei_indicators_df[i, "Id"], "T")),
+              "Parent Id" = gei_indicators_df[i, "Id"])
+  }
+}
+
+# Include short description from data
+gei_indicators_df %<>% 
+  mutate("Indicator (s)" = names(gei_data_df[,3:(ncol(gei_data_df)-7)]))
+
+# Save df as RDS
+saveRDS(gei_indicators_df, file = "data/GEI_indicators.rds")

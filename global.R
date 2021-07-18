@@ -1,5 +1,6 @@
 ## global.R ##
 
+## Libraries
 # Define used repositories
 default_repos = "http://cran.us.r-project.org"
 # Install and load necessary libraries
@@ -12,36 +13,36 @@ if(!require(radarchart)) install.packages("radarchart", repos = default_repos)
 if(!require(readxl)) install.packages("readxl", repos = default_repos)
 if(!require(shiny)) install.packages("shiny", repos = default_repos)
 if(!require(shinydashboard)) install.packages("shinydashboard", repos = default_repos)
+if(!require(shinyjs)) install.packages("shinyjs", repos = default_repos)
 if(!require(shinyWidgets)) install.packages("shinyWidgets", repos = default_repos)
 
-# Input data
-world_countries <- geojson_read("data/world.geo.json", what = "sp")
-countries <- read.csv("data/countries.csv")
-gei <- read_excel("data/GEI.xlsx")
 
-colnames(countries)[1] <- "Country"
-my_data <- merge(gei, countries, by="Country")
-current_year <- max(my_data$Year)
-my_pal <- colorNumeric(palette="viridis",
-                       domain=my_data$`Overall Gender Equality Index`,
-                       na.color="transparent")
-gei_year = subset(my_data, Year==current_year) 
-cv_large_countries = gei_year %>% filter(alpha.3 %in% world_countries$adm0_a3)
-plot_map <- world_countries[world_countries$adm0_a3 %in% cv_large_countries$alpha.3, ]
+## Input data
+geo_data <- geojson_read("data/world.geo.json", what = "sp")
+gei_data <- readRDS(file = "data/GEI_data.rds")
+gei_metadata <- readRDS(file = "data/GEI_metadata.rds")
+gei_indicators <- readRDS(file = "data/GEI_indicators.rds")
+
+
+## Set variables and initial values
+current_year <- max(gei_data$Year)
+gei_data_year <- subset(gei_data, Year == current_year)
+map_data <- geo_data[geo_data$iso_a2 %in% gei_data_year$`Country code`, ]
+my_pal <- colorNumeric(palette = "viridis",
+                       domain = gei_data$`Gender Equality Index`,
+                       na.color = "transparent")
 
 mytext <- paste(
-  "Country: ", cv_large_countries$Country,"<br/>", 
-  "Work: ", cv_large_countries$`Work (Domain score)`, "<br/>", 
-  "Money: ", cv_large_countries$`Money (Domain score)`,
+  "Country: ", gei_data_year$Country,"<br/>", 
+  "Work: ", gei_data_year$`WORK`, "<br/>", 
+  "Money: ", gei_data_year$`MONEY`,
   sep="") %>%
   lapply(htmltools::HTML)
 
-basemap <- leaflet(plot_map) %>%
+basemap <- leaflet(map_data) %>%
   addProviderTiles(providers$CartoDB.Positron,
-                   options = providerTileOptions(noWrap = TRUE)
-  ) %>%
+                   options = providerTileOptions(noWrap = TRUE)) %>%
   addLegend("bottomleft",
             pal = my_pal,
-            values = ~cv_large_countries$`Overall Gender Equality Index`,
-            title = "<small>GEI</small>") %>%
+            values = gei_data_year$`Gender Equality Index`) %>%
   setView(30.44, 56.00, 3)
