@@ -2,23 +2,14 @@
 #source("./global.R")
 
 function(input, output, session) {
-
-  reactive_rc = reactive({
-    req(input$mymap_shape_click)
-    
-    radarchart_data <- as.data.frame(reactive_db()) %>%
-      filter(Country == country_selected()) %>%
-      select("Country", ends_with("(Domain score)")) %>%
-      rename_with(~ gsub(' (Domain score)', '', .x, fixed=TRUE))
-    rownames(radarchart_data) <- radarchart_data[,1]
-    radarchart_data[,1] <- NULL
-    radarchart_data <- rbind(rep(100,6) , rep(0,6) , radarchart_data)
-    radarchart_data
-  })
   
-  reactive_rc2 = reactive({
+  ## Reactive expressions
+  
+  # Reactive expression for map radar chart
+  # It returns domains values for the selected country and year
+  map_rc_reactive = reactive({
     #req(input$mymap_shape_click)
-    
+    print(country_selected())
     radarchart_data <- as.data.frame(reactive_db()) %>%
       filter(`Country code` == country_selected()) %>%
       select("Country code",
@@ -28,19 +19,16 @@ function(input, output, session) {
                unlist(use.names=FALSE)
       )
              
-             #gei_indicators[gei_indicators$`Parent Id` == "GEI", ]$`Indicator (s)`) %>%
-      #rename_with(~ gsub(' (Domain score)', '', .x, fixed=TRUE))
     rownames(radarchart_data) <- radarchart_data[,1]
     radarchart_data[,1] <- NULL
     radarchart_data <- t(radarchart_data)
     radarchart_data <- data.frame(Domain = row.names(radarchart_data),
                                   radarchart_data, row.names = NULL)
+    }
     #radarchart_data <- tibble::rownames_to_column(radarchart_data, "Country") 
-  })
+  )
   
-  country_selected <- reactive({
-    input$mymap_shape_click$id
-  })
+  country_selected <- reactiveVal("EU28")
   
   formatted_date = reactive({
     input$plot_date
@@ -62,7 +50,7 @@ function(input, output, session) {
   })
   
   reactive_chart_color = reactive({
-    reactive_db_large() %>% filter(`Country code` == country_selected())
+    reactive_db() %>% filter(`Country code` == country_selected())
   })
   
   output$mymap <- renderLeaflet({basemap})
@@ -92,9 +80,14 @@ function(input, output, session) {
                   ))
   })
   
+  observeEvent(input$eu_button,
+               country_selected("EU28")
+  )
+  
   observeEvent(input$mymap_shape_click,{
     click<-input$mymap_shape_click
-    print(click$id)
+    country_selected(click$id)
+    print(country_selected)
     leafletProxy("mymap") %>%
       addPopups(click$lng, click$lat, click$id)
     
@@ -102,21 +95,41 @@ function(input, output, session) {
   
   observeEvent(input$indicator, {
     if (input$indicator == 'GEI') {
-      runjs(paste0('$(".selectize-input").css({"font-weight": "bold"})'))
+      runjs(paste0('$("#map_indicator_panel .selectize-input").
+        addClass("GEI_option")'))
+      runjs(paste0('$("#map_indicator_panel .selectize-input").
+        removeClass("Domain_option Subdomain_option Indicator_option")'))
+    } else if (substr(input$indicator,1,1) == 'D'){
+      runjs(paste0('$("#map_indicator_panel .selectize-input").
+        addClass("Domain_option")'))
+      runjs(paste0('$("#map_indicator_panel .selectize-input").
+        removeClass("GEI_option Subdomain_option Indicator_option")'))
+    } else if (substr(input$indicator,1,1) == 'S'){
+      runjs(paste0('$("#map_indicator_panel .selectize-input").
+        addClass("Subdomain_option")'))
+      runjs(paste0('$("#map_indicator_panel .selectize-input").
+        removeClass("GEI_option Domain_option Indicator_option")'))
+    } else if (substr(input$indicator,1,1) == 'I'){
+      runjs(paste0('$("#map_indicator_panel .selectize-input").
+        addClass("Indicator_option")'))
+      runjs(paste0('$("#map_indicator_panel .selectize-input").
+        removeClass("GEI_option Domain_option Subdomain_option")'))
     } else {
-      runjs(paste0('$(".selectize-input").css({"font-weight": "bold"})'))
+      runjs(paste0('$("#map_indicator_panel .selectize-input").
+        removeClass(
+          "GEI_option Domain_option Subdomain_option Indicator_option"
+        )'))
     }
   })
   
   output$radarPlot <- renderChartJSRadar({
-    chartJSRadar(reactive_rc2(),
+    chartJSRadar(map_rc_reactive(),
                  colMatrix = matrix(c(col2rgb(my_pal(reactive_chart_color()$`Gender Equality Index`)))),
                  polyAlpha = 0.4,
                  responsive = TRUE,
                  labelSize = 12,
                  showLegend = FALSE,
-                 main = paste("Gender Equality Index: ", reactive_chart_color()$`Gender Equality Index`)
-                 
-               
-    )})
+                 main = paste(reactive_chart_color()$Country, reactive_chart_color()$`Gender Equality Index`)
+    )
+  })
 }

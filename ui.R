@@ -6,20 +6,27 @@ dashboardPage(
   dashboardHeader(title="Gender Equality App"),
   dashboardSidebar(
     sidebarMenu(
-      menuItem("Map Explorer", tabName = "map", icon = icon("globe")),
+      menuItem("Map Explorer", tabName = "map", icon = icon("globe"),
+        sliderTextInput("plot_date",
+          label = h5("Select year"),
+          choices = sort(unique(gei_data$Year)),
+          selected = current_year,
+          grid = FALSE,
+          animate = animationOptions(interval = 3000, loop = FALSE)
+        )
+      ),
       menuItem("Trend Explorer", tabName = "map", icon = icon("chart-line")),
       menuItem("Country Explorer", tabName = "country", icon = icon("flag")),
       menuItem("Country Comparator", tabName = "comparator",
                icon = icon("balance-scale")),
       menuItem("Data Explorer", tabName = "data", icon = icon("folder-open")),
-      menuItem("About", tabName = "about", icon = icon("book"))
-    ),
-    sliderTextInput("plot_date",
-      label = h5("Select year"),
-      choices = sort(unique(gei_data$Year)),
-      selected = current_year,
-      grid = FALSE,
-      animate = animationOptions(interval = 3000, loop = FALSE)
+      menuItem("About", tabName = "about", icon = icon("book")),
+      tags$div(id = "indicators_legend",
+        tags$p(class = "GEI_option","Gender Equality Index"),
+        tags$p(class = "Domain_option","Domain"),
+        tags$p(class = "Subdomain_option","Subdomain"),
+        tags$p(class = "Indicator_option","Indicator")
+      )
     )
   ),
   dashboardBody(
@@ -49,7 +56,7 @@ dashboardPage(
             draggable = TRUE,
             width = "30%",
             right = 0,
-            div("EU-28"),
+            div(actionButton("eu_button", "", icon = icon("globe-europe"))),
             conditionalPanel(condition = "input.indicator == 'GEI'",
                              chartJSRadarOutput("radarPlot", height = "250")
             )
@@ -57,5 +64,6 @@ dashboardPage(
         ),
       )
     )
-  )
+  ),
+  skin = "purple"
 )
