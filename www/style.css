@@ -1,3 +1,29 @@
+/**Sidebar**/
+
+#legend_container .box-header {
+  padding: 3px;
+  background-color: rgb(96, 92, 168);
+}
+
+#legend_container .box-title {
+  padding-left: 2px;
+  font-size: 12px;
+  color: white;
+}
+
+#legend_container .box-body {
+  padding: 3px;
+  text-align: center;
+  font-size: 10px;
+}
+
+#legend_container .box-body p {
+  margin: 0;
+}
+
+
+/**Body**/
+
 .content {
   padding: 0;
 }
@@ -12,18 +38,7 @@
   overflow: hidden;
 }
 
-#indicators_legend {
-  width: 90%;
-  background-color: white;
-  opacity: 0.7;
-  text-align: center;
-  font-size: 10px;
-  margin-left: 10px;
-  border-radius: 3px;
-  padding: 3px;
-}
-
-#mymap {
+#myMap {
   width: 100%;
   height: calc(100vh - 50px) !important;
 }
@@ -31,13 +46,9 @@
 #map_indicator_panel {
   transform: translateX(-40%);
   text-align: center;
+  font-family: Verdana;
   opacity: 0.7;
-}
-
-#map_graphs {
-  min-width: 250px;
-  background-color: white;
-  opacity: 0.7;
+  z-index: 10000
 }
 
 .selectize-input > * {
@@ -45,26 +56,93 @@
 }
 
 #map_indicator_panel .selectize-dropdown [data-value='GEI'], .GEI_option {
-  color: rgb(149, 75, 146);
   font-weight: bold;
-  font-family: Verdana;
   text-transform: uppercase;
+  color: rgb(149, 75, 146);
 }
 
 #map_indicator_panel .selectize-dropdown [data-value^='D'], .Domain_option {
-  color: rgba(50, 50, 50, 0.8);
   font-weight: bold;
-  font-family: Verdana;
   text-transform: uppercase;
+  color: rgba(50, 50, 50, 0.9);
 }
 
 #map_indicator_panel .selectize-dropdown [data-value^='S'], .Subdomain_option {
-  color: rgba(40, 40, 40, 0.8);
   font-weight: bold;
-  font-family: Verdana;
+  color: rgba(40, 40, 40, 0.9);
 }
 
 #map_indicator_panel .selectize-dropdown [data-value^='I'], .Indicator_option {
-  color: rgba(30, 30, 30, 0.8);
-  font-family: Verdana;
+  color: rgba(30, 30, 30, 0.9);
+}
+
+#map_graphs {
+  min-width: 250px;
+  margin: 0 5px;
+  padding: 3px 0;
+  background-color: white;
+  opacity: 0.8;
+}
+
+#eu_value_container {
+  display: flex;
+  justify-content: center;
+}
+
+#eu_button {
+  padding: 2px 3px 0 3px;
+  background: none;
+  border: none;
+}
+
+#euHtmlValue {
+  margin: auto 0;
+  font-weight: 600;
+}
+
+.ranking {
+  padding: 0 5px;
+  font-size: 11px;
+}
+
+.rank_title {
+  text-align: center;
+  font-size: 12px;
+}
+
+#ranking_container table th {
+  display: none;
+}
+
+#ranking_container table td {
+  padding: 3px;
+}
+
+#countryHtmlValue {
+  text-align: center;
+}
+
+#country_html_title {
+  display: inline-block;
+  margin-top: 6px;
+  text-align: center;
+  font-size: 14px;
+}
+
+#country_html_subtitle {
+  display: block;
+  margin-top: 3px;
+  text-align: center;
+  font-size: 12px;
+}
+
+#metrics_charts_container {
+  display: flex;
+  justify-content: center;
+  overflow: auto;
+  padding: 2px;
+}
+
+#totalChart, #womenChart, #menChart {
+
 }

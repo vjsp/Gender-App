@@ -1,6 +1,7 @@
 ## Datasets treatment ##
 
-### Libraries
+### Libraries ----------------------
+
 # Define used repositories
 default_repos = "http://cran.us.r-project.org"
 # Install and load necessary libraries
@@ -11,7 +12,8 @@ if(!require(tidyr)) install.packages("tidyr", repos = default_repos)
 
 
 
-### Variables
+### Variables ----------------------
+
 # Path to GEI data original excel file
 gei_file_path <- "./data/Gender_Equality_Index.xlsx"
 # Path to world geodata json file
@@ -32,23 +34,25 @@ eu_regions_df <- data.frame("Country code" = "EU28",
 
 
 
-### Functions
+### Functions ----------------------
+
 # Function to read all sheets from excel file
-# @param xlsxFile - File with .xlsx extension
+# @param xlsx_file - File with .xlsx extension
 # @return A list of dataframes
-read_all_sheets = function(xlsxFile, ...) {
-  sheet_names = openxlsx::getSheetNames(xlsxFile)
-  sheet_list = as.list(rep(NA, length(sheet_names)))
-  names(sheet_list) = sheet_names
+read_all_sheets <- function(xlsx_file, ...) {
+  sheet_names <- openxlsx::getSheetNames(xlsx_file)
+  sheet_list <- as.list(rep(NA, length(sheet_names)))
+  names(sheet_list) <- sheet_names
   for (sn in sheet_names) {
-    sheet_list[[sn]] = openxlsx::read.xlsx(xlsxFile, sheet=sn, ...)
+    sheet_list[[sn]] <- openxlsx::read.xlsx(xlsx_file, sheet=sn, ...)
   }
   return(sheet_list)
 }
 
 
 
-### Main
+### Main ----------------------
+
 ## Read excel file
 gei_file_data <- read_all_sheets(gei_file_path, sep.names = " ",
                                  fillMergedCells = TRUE)
@@ -62,7 +66,6 @@ countries_df <- data.frame("Country code" = world_geo_data$iso_a2,
   rbind(eu_regions_df)
   
 
-
 ## Build GEI metadata dataframe
 gei_metadata_df <- data.frame(gei_file_data["Metadata"]) %>%
   # Remove unnecessary columns and duplicates
@@ -70,7 +73,7 @@ gei_metadata_df <- data.frame(gei_file_data["Metadata"]) %>%
   select(c(0:5)) %>%
   unique() %>%
   group_by(X1, X2, X3, X4) %>%
-  mutate(X5 = paste0(X5, collapse = "")) %>%
+  mutate(X5 = paste0(X5, collapse = " ")) %>%
   unique() %>%
   # Set column names and remove those with unnecessary info (header and
   # additional variable)
