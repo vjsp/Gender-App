@@ -1,4 +1,100 @@
-/**Sidebar**/
+/*============== Sidebar ==============*/
+
+/*----------- Inputs style -----------*/
+
+/* General style */
+.sidebar_conditional_panel {
+  background-color: rgb(44, 59, 65);
+}
+
+.sidebar_conditional_panel:hover {
+  overflow: visible;
+}
+
+section.sidebar .shiny-input-container {
+  margin-bottom: 0;
+  padding: 2px 15px;
+}
+
+/* Panel animation */
+.top_to_bottom {
+  max-height: 500px;
+  animation: topToBottom linear 1s;
+  -webkit-animation: topToBottom linear 1s;
+  -moz-animation: topToBottom linear 1s;
+  -o-animation: topToBottom linear 1s;
+  -ms-animation: topToBottom linear 1s;
+}
+
+@keyframes topToBottom {
+  0% {
+    max-height: 0;
+  }
+  100% {
+    max-height: 500px;
+  }
+}
+
+@-moz-keyframes topToBottom {
+  0% {
+    max-height: 0;
+  }
+  100% {
+    max-height: 500px;
+  }
+}
+
+@-webkit-keyframes topToBottom {
+  0% {
+    max-height: 0;
+  }
+  100% {
+    max-height: 500px;
+    overflow: visible;
+  }
+}
+
+@-o-keyframes topToBottom {
+  0% {
+    max-height: 0;
+  }
+  100% {
+    max-height: 500px;
+  }
+}
+
+/* Overwritten sliders style */
+.irs--shiny .irs-bar,
+.irs--shiny .irs-line {
+  height: 4px;
+}
+
+.irs--shiny .irs-handle {
+  width: 12px;
+  height: 12px;
+  top: 20px;
+}
+
+/* Overwritten picker style */
+.form-control {
+  border-radius: 4px;
+}
+
+.skin-purple .sidebar .dropdown a {
+  overflow: visible;
+  color: rgb(30, 30, 30);
+}
+
+.skin-purple .sidebar .selected a {
+  color: rgb(66, 139, 202);
+}
+
+.ui-tooltip-content {
+  display: none;
+}
+
+
+/*-------------- Legend --------------*/
 
 #legend_container .box-header {
   padding: 3px;
@@ -22,20 +118,25 @@
 }
 
 
-/**Body**/
+
+/*=============== Body ===============*/
+
+/*----------- Main content -----------*/
 
 .content {
   padding: 0;
 }
 
-.outer {
+.row {
+  margin:0;
+}
+
+#map_outer, #trend_outer {
   position: relative;
   height: 100%;
   left: 0;
   right: 0;
-  bottom: 0;
   padding: 0;
-  overflow: hidden;
 }
 
 #myMap {
@@ -43,48 +144,89 @@
   height: calc(100vh - 50px) !important;
 }
 
-#map_indicator_panel {
+/* For small screens */
+@media (max-width: 767px) {
+  #map_outer {
+    position: absolute;
+  }
+  
+  #myMap {
+    height: 100% !important;
+  }
+}
+
+
+/*-------- Indicator selector --------*/
+
+#map_indicator_panel,  #trend_indicator_panel {
+  position: relative;
+  width: 90%;
+  top: 10px;
+  left: 50%;
+  -webkit-transform: translateX(-40%);
+  -moz-transform: translateX(-40%);
+  -ms-transform: translateX(-40%);
+  -o-transform: translateX(-40%);
   transform: translateX(-40%);
+  cursor: move;
   text-align: center;
   font-family: Verdana;
   opacity: 0.7;
-  z-index: 10000
+  z-index: 10000;
 }
 
 .selectize-input > * {
   width: 90%;
 }
 
-#map_indicator_panel .selectize-dropdown [data-value='GEI'], .GEI_option {
+#map_indicator_panel .selectize-dropdown [data-value='GEI'],
+#trend_indicator_panel .selectize-dropdown [data-value='GEI'],
+.GEI_option {
   font-weight: bold;
   text-transform: uppercase;
   color: rgb(149, 75, 146);
 }
 
-#map_indicator_panel .selectize-dropdown [data-value^='D'], .Domain_option {
+#map_indicator_panel .selectize-dropdown [data-value^='D'],
+#trend_indicator_panel .selectize-dropdown [data-value^='D'],
+.Domain_option {
   font-weight: bold;
   text-transform: uppercase;
+  color: rgb(50, 50, 50);
   color: rgba(50, 50, 50, 0.9);
 }
 
-#map_indicator_panel .selectize-dropdown [data-value^='S'], .Subdomain_option {
+#map_indicator_panel .selectize-dropdown [data-value^='S'],
+#trend_indicator_panel .selectize-dropdown [data-value^='S'],
+.Subdomain_option {
   font-weight: bold;
+  color: rgb(40, 40, 40);
   color: rgba(40, 40, 40, 0.9);
 }
 
-#map_indicator_panel .selectize-dropdown [data-value^='I'], .Indicator_option {
+#map_indicator_panel .selectize-dropdown [data-value^='I'],
+#trend_indicator_panel .selectize-dropdown [data-value^='I'],
+.Indicator_option {
+  color: rgb(30, 30, 30);
   color: rgba(30, 30, 30, 0.9);
 }
 
+
+/*--------- Map graphs panel ---------*/
+
 #map_graphs {
   min-width: 250px;
+  max-height: calc(100% - 100px);
   margin: 0 5px;
   padding: 3px 0;
+  overflow-y: scroll;
   background-color: white;
   opacity: 0.8;
 }
 
 #eu_value_container {
+  display: -ms-flexbox;
+  display: -webkit-flex;
   display: flex;
   justify-content: center;
 }
@@ -137,12 +279,65 @@
 }
 
 #metrics_charts_container {
+  display: -ms-flexbox;
+  display: -webkit-flex;
   display: flex;
   justify-content: center;
   overflow: auto;
   padding: 2px;
 }
 
-#totalChart, #womenChart, #menChart {
 
+/*------------ Trend tabs ------------*/
+
+#trend_tabs_row {
+  margin: 10px;
+}
+
+#trend_tabs_row .nav-tabs>li.active>a,
+#trend_tabs_row .nav-tabs>li.active>a:focus,
+#trend_tabs_row .nav-tabs>li.active>a:hover {
+  color: rgb(149, 75, 146);
+  border: 1px solid rgb(96, 92, 168);
+  border-bottom-color: transparent;
+}
+
+#trend_tabs_row .nav>li>a:active,
+#trend_tabs_row .nav>li>a:focus,
+#trend_tabs_row .nav>li>a:hover {
+  color: rgb(149, 75, 146);
+  color: rgba(149, 75, 146, 0.8);
+}
+
+#trend_tabs_row .nav-tabs {
+  border-bottom: 1px solid rgb(96, 92, 168);
+}
+
+
+/*--------- Trend tables ---------*/
+
+/* Flags */
+.team {
+  display: flex;
+  align-items: center;
+}
+
+.flag {
+  margin-right: 5px;
+  height: 20px;
+}
+
+/* Scores */
+.trend_table_score {
+  position: relative;
+  float: right;
+  width: 50px;
+  /*padding: 2px 5px;*/
+  text-align: center;
+  font-size: 13px;
+  color: rgb(0, 0, 0);
+  opacity: 0.8;
+  border: 1px solid rgb(0, 0, 0);
+  border: 1px solid rgba(0, 0, 0, 0.03);
+  border-radius: 30px;
 }

@@ -1,10 +1,11 @@
-## global.R ##
+################### global.R ###################
 
-## Libraries ----------------------
+###=============== Libraries ===============###
 
 # Define used repositories
 default_repos = "http://cran.us.r-project.org"
 # Install and load necessary libraries
+if(!require(data.table)) install.packages("data.table", repos = default_repos)
 if(!require(dplyr)) install.packages("dplyr", repos = default_repos)
 if(!require(formattable)) install.packages("formattable",repos = default_repos)
 if(!require(geojsonio)) install.packages("geojsonio", repos = default_repos)
@@ -12,15 +13,17 @@ if(!require(highcharter)) install.packages("highcharter", repos = default_repos)
 if(!require(leaflet)) install.packages("leaflet", repos = defualt_repos)
 if(!require(magrittr)) install.packages("magrittr", repos = default_repos)
 if(!require(radarchart)) install.packages("radarchart", repos = default_repos)
+if(!require(reactable)) install.packages("reactable", repos = default_repos)
 if(!require(readxl)) install.packages("readxl", repos = default_repos)
 if(!require(shiny)) install.packages("shiny", repos = default_repos)
 if(!require(shinydashboard)) install.packages("shinydashboard", repos = default_repos)
 if(!require(shinyjs)) install.packages("shinyjs", repos = default_repos)
 if(!require(shinyWidgets)) install.packages("shinyWidgets", repos = default_repos)
+if(!require(sparkline)) install.packages("sparkline", repos = default_repos)
 if(!require(tidyr)) install.packages("tidyr", repos = default_repos)
 
 
-## Input data ----------------------
+###=============== Input data ===============###
 
 geo_data <- geojson_read("data/world.geo.json", what = "sp")
 gei_data <- readRDS(file = "data/GEI_data.rds")
@@ -28,21 +31,71 @@ gei_metadata <- readRDS(file = "data/GEI_metadata.rds")
 gei_full_indicators <- readRDS(file = "data/GEI_indicators.rds")
 
 
-## Variables and initial values ----------------------
+###========== Modified data frames ==========###
 
-# Set the current (latest) year
-current_year <- max(gei_data$Year)
-
-# Exclude the gender detail from indicators dataframe
+# Exclude the gender detail metrics from indicators dataframe
 gei_indicators <- gei_full_indicators %>% filter(Type != "Metric")
 
 # Round all data to 2 decimals
 gei_data <- gei_data %>% mutate_if(is.numeric, round, digits=2)
 
-# Define the color palette taking into account all the values
+
+###====== Variables and initial values ======###
+
+# Set a vector with the available years
+gei_years <- sort(unique(gei_data$Year))
+
+# Set the current (latest) year
+current_year <- max(gei_years)
+
+# Set the default range to the full range
+default_year_range <- c(min(gei_years), max(gei_years))
+
+
+###================ Palettes ================###
+
+# Define scores color palette taking into account all possible values (0-100)
 my_pal <- colorNumeric(palette = "viridis",
-                       domain = c(min(gei_data[3:54]), max(gei_data[3:54])),
+                       domain = c(0,100),
                        na.color = "transparent")
+
+# Define trend (growth) color palette taking into account different ranges
+trend_pal <- function(value = NA) {
+  # Define color values
+  high_green <- rgb(46, 182, 44, maxColorValue = 255)
+  low_green <- rgb(131, 212, 117, maxColorValue = 255)
+  blue <- rgb(0, 0, 240, maxColorValue = 255)
+  low_red <- rgb(240, 116, 11, maxColorValue = 255)
+  high_red <- rgb(220, 28, 19, maxColorValue = 255)
+  
+  # Define auxiliary palettes
+  green_palette <- colorRampPalette(colors = c(low_green, high_green),
+                                    space = "rgb")(100)
+  red_palette <- colorRampPalette(colors = c(high_red, low_red),
+                                  space = "rgb")(100)
+
+  # Set different colors for positive and negative value defining limits and
+  # a special case for 0
+  ifelse(value >= 20,
+    high_green,
+    ifelse((value > 0) & (value < 20),
+      colorNumeric(palette = green_palette, domain = c(0.01,20))(value),
+      ifelse(value == 0,
+        blue,
+        ifelse((value > -20) & (value < 0),
+          colorNumeric(palette = red_palette, domain = c(-20,-0.01))(value),
+          ifelse(value <= -20,
+            high_red,
+            "gray"
+          )
+        )
+      )
+    )
+  )
+}
+
+
+###=========== Highcharter themes ===========###
 
 # Set highcharter theme to change the font
 my_hc_theme <- hc_theme(
@@ -52,7 +105,7 @@ my_hc_theme <- hc_theme(
 )
 
 
-## Auxiliar functions ----------------------
+###========== Auxiliary functions ==========###
 
 # Function to fix the item selection issue when using input elements in sidebar
 # @param menu_item - Menu item
@@ -61,15 +114,38 @@ my_hc_theme <- hc_theme(
 convert_menu_item <- function(menu_item,tab_name) {
   menu_item$children[[1]]$attribs['data-toggle'] <- "tab"
   menu_item$children[[1]]$attribs['data-value'] <- tab_name
+  if (length(menu_item$attribs$class) > 0 &&
+      menu_item$attribs$class == "treeview") {
+    menu_item$attribs$class = NULL
+  }
   menu_item
 }
 
 # Function to use the color palette with formattable
-# @return A formatter using the color palette
-format_color <- function (...) {
+# @return A formatter using the color palette to style the text
+format_color_formattable <- function (...) {
   formatter("span", style = function(x) {
     style(color = my_pal(x))
   })
+}
+
+# Function to use the color palette with reactable
+# @value - The value (number) to be styled
+# @return A list using the color palette to style the text
+format_trend_reactable <- function (value) {
+  list(colDef(
+    cell = function(value) {
+      if (value >= 0) paste0("+", value) else value
+    },
+    style = function(value) {
+      color <- if (value > 0) {
+        "#008000"
+      } else if (value < 0) {
+        "#e00000"
+      }
+      list(fontWeight = 600, color = color)
+    }
+  ))
 }
 
 # Function to round up a number taking into account the number of digits
@@ -111,8 +187,6 @@ get_max_value <- function(indicator) {
   }
   
   if (max_value > 1000) {
-    print(max_value)
-    print(log10(max_value))
     max_value %<>% ceiling_digits(., -floor(1 * log10(.)))
   } else {
     max_value
@@ -148,14 +222,70 @@ create_gauge <- function(data, max_value, title, color) {
     hc_add_theme(my_hc_theme)
 }
 
-## Scripts ----------------------
+# Function to adapt the selector style taking into account the selected
+# indicator
+# @param input_object Select input object
+# @param indicator_panel_id Indicator's panel HTML Id
+set_selector_style <- function(input_object, indicator_panel_id) {
+  if (input_object == 'GEI') {
+    runjs(paste0('$("',indicator_panel_id, ' .selectize-input").
+        addClass("GEI_option")'))
+    runjs(paste0('$("',indicator_panel_id, ' .selectize-input").
+        removeClass("Domain_option Subdomain_option Indicator_option")'))
+  } else if (substr(input_object,1,1) == 'D'){
+    runjs(paste0('$("',indicator_panel_id, ' .selectize-input").
+        addClass("Domain_option")'))
+    runjs(paste0('$("',indicator_panel_id, ' .selectize-input").
+        removeClass("GEI_option Subdomain_option Indicator_option")'))
+  } else if (substr(input_object,1,1) == 'S'){
+    runjs(paste0('$("',indicator_panel_id, ' .selectize-input").
+        addClass("Subdomain_option")'))
+    runjs(paste0('$("',indicator_panel_id, ' .selectize-input").
+        removeClass("GEI_option Domain_option Indicator_option")'))
+  } else if (substr(input_object,1,1) == 'I'){
+    runjs(paste0('$("',indicator_panel_id, ' .selectize-input").
+        addClass("Indicator_option")'))
+    runjs(paste0('$("',indicator_panel_id, ' .selectize-input").
+        removeClass("GEI_option Domain_option Subdomain_option")'))
+  } else {
+    runjs(paste0('$("',indicator_panel_id, ' .selectize-input").
+        removeClass(
+          "GEI_option Domain_option Subdomain_option Indicator_option"
+        )'))
+  }
+}
 
-# Javascript function to delay transitions in conditional panels
+# Function to obtain a color with a defined level of opacity (alpha)
+# @param color - The base color
+# @param alpha - The alpha (opacity) value ([0,1]). Default: 1
+# @return A rgba color
+apply_alpha_to_color <- function(color, alpha = 1) {
+  # "If" condition is used to avoid errors when "color" is empty
+  if (length(color) != 0) {
+    rgb_color <- col2rgb(color)
+    rgb(rgb_color[1],rgb_color[2],rgb_color[3], alpha * 255, maxColorValue = 255)
+}}
+
+
+###=============== JS scripts ===============###
+
+# Javascript function to apply some animations on conditional panels
 js <- "
 $(document).ready(function(){
-  $('.conditional_panel').on('show', function(){
+  // Delay transitions in map_graphs conditional panels
+  $('#map_graphs .conditional_panel').on('show', function(){
     $(this).css('opacity', 0).delay(500).animate({opacity: 1}, 
                                                   {duration: 500});
+  });
+  
+  // Top to bottom slide effect on sidebars conditional panels
+  $('.sidebar_conditional_panel').on('show', function(){
+    $('.sidebar_conditional_panel').removeClass('top_to_bottom');
+    $('.sidebar_conditional_panel').css('overflow', 'hidden');
+    $(this).addClass('top_to_bottom');
+    setTimeout(function() {
+      $('.sidebar_conditional_panel').css('overflow', 'visible');
+    }, 1000);
   });
 });
 "

@@ -1,6 +1,6 @@
-## Datasets treatment ##
+############## Datasets treatment ##############
 
-### Libraries ----------------------
+###=============== Libraries ===============###
 
 # Define used repositories
 default_repos = "http://cran.us.r-project.org"
@@ -12,7 +12,7 @@ if(!require(tidyr)) install.packages("tidyr", repos = default_repos)
 
 
 
-### Variables ----------------------
+###=============== Variables ===============###
 
 # Path to GEI data original excel file
 gei_file_path <- "./data/Gender_Equality_Index.xlsx"
@@ -34,7 +34,7 @@ eu_regions_df <- data.frame("Country code" = "EU28",
 
 
 
-### Functions ----------------------
+###=============== Functions ===============###
 
 # Function to read all sheets from excel file
 # @param xlsx_file - File with .xlsx extension
@@ -46,14 +46,14 @@ read_all_sheets <- function(xlsx_file, ...) {
   for (sn in sheet_names) {
     sheet_list[[sn]] <- openxlsx::read.xlsx(xlsx_file, sheet=sn, ...)
   }
-  return(sheet_list)
+  sheet_list
 }
 
 
 
-### Main ----------------------
+###================== Main ==================###
 
-## Read excel file
+## Read files
 gei_file_data <- read_all_sheets(gei_file_path, sep.names = " ",
                                  fillMergedCells = TRUE)
 world_geo_data <- geojson_read("data/world.geo.json", what = "sp")
@@ -97,7 +97,17 @@ gei_data_df <- gei_file_data[-which(names(gei_file_data) == "Metadata")] %>%
                           Country)) %>%
   rename("Country code" = Country) %>%
   # Add country names
-  merge(countries_df, by = "Country code")
+  merge(countries_df, by = "Country code") %>%
+  # Reorder columns to keep together same year data
+  relocate("Year", .before = "Country code") %>%
+  relocate("Country", .after = "Country code") %>%
+  # Reorder rows by Year and Country (alphabetically but keeping EU28 as first
+  # of them)
+  mutate(Country = {
+    factor(Country) %>% 
+      relevel(Country, ref = "European Union 28")
+  }) %>%
+  arrange_at(c("Year","Country"))
 # Save df as RDS
 saveRDS(gei_data_df, file = "data/GEI_data.rds")
            
@@ -176,7 +186,7 @@ for (i in 1:nrow(gei_indicators_df)) {
 
 # Include short description from data
 gei_indicators_df %<>% 
-  mutate("Indicator (s)" = names(gei_data_df[,3:(ncol(gei_data_df)-7)]))
+  mutate("Indicator (s)" = names(gei_data_df[,4:(ncol(gei_data_df)-6)]))
 
 # Save df as RDS
 saveRDS(gei_indicators_df, file = "data/GEI_indicators.rds")

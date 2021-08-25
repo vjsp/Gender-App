@@ -1,28 +1,26 @@
-## server.R ##
+################### server.R ###################
 
 function(input, output, session) {
   
-  ## Reactive values ----------------------
+  ###============== Map Explorer ==============###
+  
+  ##------------- Reactive values -------------##
   
   # Reactive value for the selected country
   # It defaults to European Union 28
   sel_country_r <- reactiveVal("EU28")
-  
-  # Reactive value for the selected year
-  # It defaults to the current (latest) year
-  sel_date_r <- reactiveVal(current_year)
   
   # Reactive value for the selected indicator
   # It defaults to Gender Equality Index
   sel_indicator_r <- reactiveVal("Gender Equality Index")
 
   
-  ## Reactive expressions ----------------------
+  ##----------- Reactive expressions -----------##
   
   # Reactive expression for the selected year GEI data
-  # It is updated when the selected year changes
+  # It returns all GEI data for the selected year
   gei_year_data_r <- reactive({
-    gei_data %>% filter(Year == sel_date_r())
+    gei_data %>% filter(Year == input$map_year)
   })
   
   # Reactive expression for the selected year and country GEI data
@@ -97,7 +95,7 @@ function(input, output, session) {
       filter(`Indicator (s)` == sel_indicator_r()) %>%
       pull(Id)
     
-    domains_chart_data <- as.data.frame(gei_year_data_r()) %>%
+    indicators_chart_data <- as.data.frame(gei_year_data_r()) %>%
       filter(`Country code` == sel_country_r()) %>%
       select("Country",
              gei_full_indicators %>% 
@@ -110,14 +108,14 @@ function(input, output, session) {
     # Metrics are not limited to a score between 0 and 100, so the palette
     # can not be used
     if (substr(input$indicator,1,1) != 'I') {
-      domains_chart_data %<>% mutate(color = my_pal(Score))
+      indicators_chart_data %<>% mutate(color = my_pal(Score))
     } else {
-      domains_chart_data
+      indicators_chart_data
     }
   })
 
 
-  ## Observers ----------------------
+  ##---------------- Observers ----------------##
   
   # It updates leaflet map when selection is changed 
   observe(
@@ -149,8 +147,8 @@ function(input, output, session) {
                 values = map_indicator_data_r())
   )
 
-  
-  ## Events observers ----------------------
+
+  ##------------- Event observers -------------##
   
   observeEvent(input$indicator, {
     # Set the indicator variable value
@@ -160,36 +158,7 @@ function(input, output, session) {
     )
     
     # Adapt the selector style taking into account the selected indicator
-    if (input$indicator == 'GEI') {
-      runjs(paste0('$("#map_indicator_panel .selectize-input").
-        addClass("GEI_option")'))
-      runjs(paste0('$("#map_indicator_panel .selectize-input").
-        removeClass("Domain_option Subdomain_option Indicator_option")'))
-    } else if (substr(input$indicator,1,1) == 'D'){
-      runjs(paste0('$("#map_indicator_panel .selectize-input").
-        addClass("Domain_option")'))
-      runjs(paste0('$("#map_indicator_panel .selectize-input").
-        removeClass("GEI_option Subdomain_option Indicator_option")'))
-    } else if (substr(input$indicator,1,1) == 'S'){
-      runjs(paste0('$("#map_indicator_panel .selectize-input").
-        addClass("Subdomain_option")'))
-      runjs(paste0('$("#map_indicator_panel .selectize-input").
-        removeClass("GEI_option Domain_option Indicator_option")'))
-    } else if (substr(input$indicator,1,1) == 'I'){
-      runjs(paste0('$("#map_indicator_panel .selectize-input").
-        addClass("Indicator_option")'))
-      runjs(paste0('$("#map_indicator_panel .selectize-input").
-        removeClass("GEI_option Domain_option Subdomain_option")'))
-    } else {
-      runjs(paste0('$("#map_indicator_panel .selectize-input").
-        removeClass(
-          "GEI_option Domain_option Subdomain_option Indicator_option"
-        )'))
-    }
-  })
-  
-  observeEvent(input$plot_date, {
-    sel_date_r(input$plot_date)
+    set_selector_style(input$indicator, "#map_indicator_panel")
   })
   
   observeEvent(input$eu_button, {
@@ -200,8 +169,8 @@ function(input, output, session) {
     sel_country_r(input$myMap_shape_click$id)
   })
 
-  
-  ## Outputs ----------------------
+
+  ##----------------- Outputs -----------------##
   
   basemap <- leaflet() %>%
     addProviderTiles(providers$CartoDB.Positron,
@@ -210,34 +179,32 @@ function(input, output, session) {
   output$myMap <- renderLeaflet({basemap})
   
   output$euHtmlValue <- renderUI({
-    rgb <- col2rgb(my_pal(eu_indicator_value_r()))
-    rgbStr <- sprintf('rgb(%d,%d,%d)', rgb[1], rgb[2], rgb[3])
     value <- eu_indicator_value_r()
     div(HTML(sprintf("European Union 28 <text style='color:%s'> %s </text>",
-                     rgbStr, value)))
+                     my_pal(value), value)))
   })
   
   output$top3Table <- renderFormattable({
-    my_format <- list(format_color())
-    names(my_format) <- sel_indicator_r()
+    table_format <- list(format_color_formattable())
+    names(table_format) <- sel_indicator_r()
     formattable(
       gei_year_indicator_data_r() %>% 
         arrange_at(sel_indicator_r(), list(desc)) %>%
         head(3),
       align = c('l','r'),
-      my_format
+      table_format
     )
   })
   
   output$bottom3Table <- renderFormattable({
-    my_format <- list(format_color())
-    names(my_format) <- sel_indicator_r()
+    table_format <- list(format_color_formattable())
+    names(table_format) <- sel_indicator_r()
     formattable(
       gei_year_indicator_data_r() %>% 
         arrange_at(sel_indicator_r()) %>%
         head(3),
       align = c('l','r'),
-      my_format
+      table_format
     )
   })
   
@@ -254,10 +221,10 @@ function(input, output, session) {
   })
   
   output$domainsChart <- renderHighchart({
-    shiny::validate(need(input$indicator == 'GEI', message = FALSE))
+    shiny::validate(need(input$indicator == "GEI", message = FALSE))
     data = map_indicators_chart_data_r()
     highchart() %>%
-      hc_chart(type = 'area', polar = TRUE) %>%
+      hc_chart(type = "area", polar = TRUE) %>%
       hc_add_series(data$Score, name = unique(data$Country),
                     color = my_pal(gei_indicator_value_r()), fillOpacity = 0.4,
                     marker = list(radius = 3), showInLegend = FALSE) %>%
@@ -273,10 +240,10 @@ function(input, output, session) {
   })
   
   output$subdomainsChart <- renderHighchart({
-    shiny::validate(need(substr(input$indicator,1,1) == 'D', message = FALSE))
+    shiny::validate(need(substr(input$indicator,1,1) == "D", message = FALSE))
     data <- map_indicators_chart_data_r()
     highchart() %>%
-      hc_chart(type = 'bar', polar = TRUE) %>%
+      hc_chart(polar = TRUE) %>%
       hc_add_series(data, type="bar", name = unique(data$Country),
                     hcaes(x = Indicator, y = Score, color = color),
                     showInLegend = FALSE) %>%
@@ -293,10 +260,10 @@ function(input, output, session) {
   })
   
   output$indicatorsChart <- renderHighchart({
-    shiny::validate(need(substr(input$indicator,1,1) == 'S', message = FALSE))
+    shiny::validate(need(substr(input$indicator,1,1) == "S", message = FALSE))
     data <- map_indicators_chart_data_r()
     highchart() %>%
-      hc_chart(type = 'bar', marginLeft = "160") %>%
+      hc_chart(marginLeft = "160") %>%
       hc_add_series(data, type="bar", name = unique(data$Country),
                     hcaes(x = Indicator, y = Score, color = color),
                     showInLegend = FALSE) %>%
@@ -328,23 +295,336 @@ function(input, output, session) {
   })
   
   output$totalChart <- renderHighchart({
-    shiny::validate(need(substr(input$indicator,1,1) == 'I', message = FALSE))
+    shiny::validate(need(substr(input$indicator,1,1) == "I", message = FALSE))
     data <- map_indicators_chart_data_r()$Score[3]
     max_value <- get_max_value(sel_indicator_r())
     create_gauge(data, max_value, "Total", "green")
   })
   
   output$womenChart <- renderHighchart({
-    shiny::validate(need(substr(input$indicator,1,1) == 'I', message = FALSE))
+    shiny::validate(need(substr(input$indicator,1,1) == "I", message = FALSE))
     data <- map_indicators_chart_data_r()$Score[1]
     max_value <- get_max_value(sel_indicator_r())
     create_gauge(data, max_value, "Women", "pink")
   })
   
   output$menChart <- renderHighchart({
-    shiny::validate(need(substr(input$indicator,1,1) == 'I', message = FALSE))
+    shiny::validate(need(substr(input$indicator,1,1) == "I", message = FALSE))
     data <- map_indicators_chart_data_r()$Score[2]
     max_value <- get_max_value(sel_indicator_r())
     create_gauge(data, max_value, "Men", "blue")
+  })
+  
+  
+  
+  ###============= Trend Explorer =============###
+
+  ##------------- Reactive values -------------## 
+  
+  # Reactive value for the selected indicator
+  # It defaults to Gender Equality Index
+  trend_sel_indicator_r <- reactiveVal("Gender Equality Index")
+
+  
+  ##----------- Reactive expressions -----------##
+  
+  # Reactive expression for the selected indicator trend GEI data used in the
+  # chart
+  # It returns the GEI data for the indicator, years and countries specified
+  # in the input selectors with the years as rows
+  trend_indicator_chart_data_r <- reactive({
+    gei_data %>%
+      select(Year, Country, Indicator = trend_sel_indicator_r()) %>%
+      filter(Year >= input$trend_years[1] & Year <= input$trend_years[2]) %>%
+      filter(Country %in% input$trend_countries) %>%
+      arrange_at(c("Year","Country"))
+  })
+  
+  # Reactive expression for the selected indicator trend GEI data used in the
+  # score table
+  # It returns the GEI data for the indicator, years and countries specified
+  # in the input selectors with the years as columns
+  # It adds a column for the trend sparkline
+  trend_indicator_table_data_r <- reactive({
+    trend_indicator_chart_data_r() %>%
+      spread(Year, Indicator) %>%
+      mutate(Scores = NA)
+  })
+  
+  # Reactive expression for the selected indicator trend GEI data used in the
+  # variations table
+  # It returns the GEI data for the indicator, years and countries specified
+  # in the input selectors with the variation between years as columns
+  # It also includes the cumulative variation between last and first years
+  trend_indicator_var_table_data_r <- reactive({
+    shiny::validate(need(input$trend_years[1] != input$trend_years[2],
+                         message = "Variations only apply with ranges"))
+    score_df <- trend_indicator_chart_data_r() %>%
+      spread(Year, Indicator)
+    n_cols <- length(score_df)
+    cbind(score_df[1],
+          score_df[-c(1,2)] - score_df[-c(1,n_cols)],
+          setNames(score_df[n_cols] - score_df[2], "Cumulative")) %>%
+      mutate_if(is.numeric, round, digits = 2) %>%
+      mutate(Trend = NA)
+  })
+
+  # Reactive expression for the sparkline data used in the scores table
+  # It summarises the scores of the selected indicator 
+  # It adds a column for the scores sparkline
+  trend_sparkline_data_r <- reactive({
+    trend_indicator_chart_data_r() %>%
+      group_by(Country) %>%
+      summarise(Scores = list(Indicator), .groups = "drop")
+  })
+  
+  # Reactive expression for the sparkline data used in the variations table
+  # It merges all years into a column for the variations sparkline
+  trend_sparkline_var_data_r <- reactive({
+    trend_indicator_var_table_data_r() %>%
+      select(-c(Cumulative, Variations)) %>%
+      gather("Year","Trend",2:ncol(.)) %>%
+      group_by(Country) %>%
+      summarise(Variations = list(Variations), .groups = "drop")
+  })
+  
+    
+  ##------------- Event observers -------------##
+  
+  observeEvent(input$trend_indicator, {
+    # Set the indicator variable value
+    trend_sel_indicator_r(gei_full_indicators %>%
+                            filter(Id == input$trend_indicator) %>%
+                            pull("Indicator (s)")
+    )
+    
+    # Adapt the selector style taking into account the selected indicator
+    set_selector_style(input$trend_indicator, "#trend_indicator_panel")
+  })
+  
+  # Event to avoid that both years or the trend range are set to the same value
+  observeEvent(input$trend_years, {
+    if (input$trend_years[1] == input$trend_years[2]) {
+      if (input$trend_years[1] == min(gei_years)) {
+        updateSliderTextInput(session,"trend_years",
+          selected = c(
+            input$trend_years[1],
+            gei_years[match(input$trend_years[2], gei_years) + 1]
+          )
+        )
+      } else {
+        updateSliderTextInput(session, "trend_years",
+          selected = c(
+            gei_years[match(input$trend_years[1], gei_years) - 1],
+            input$trend_years[2]
+          )
+        )
+      }
+    }
+  })
+
+   
+  ##----------------- Outputs -----------------##
+  
+  output$trendChart <- renderHighchart({
+    shiny::validate(need(input$trend_countries != "",
+                         message = "Please, select any country"))
+    data <- trend_indicator_chart_data_r()
+    highchart() %>%
+      hc_chart(type = 'line') %>%
+      hc_add_series(data, type="line", name = unique(data$Country),
+                    hcaes(x = Year, y = Indicator, group = Country),
+                    showInLegend = TRUE) %>%
+      hc_xAxis(title = list(text = "Year"), allowDecimals = FALSE) %>%
+      hc_yAxis(title = list(text = "Score")) %>%
+      hc_legend(layout = "vertical", align = "right", padding = 20) %>%
+      hc_exporting(enabled = TRUE,
+                   buttons = list(
+                     contextButton = list(
+                       menuItems = list("viewFullscreen", "printChart",
+                                        "separator", "downloadPNG",
+                                        "downloadJPEG", "downloadPDF",
+                                        "downloadSVG", "separator",
+                                        "downloadCSV", "downloadXLS")))) %>%
+      hc_add_theme(my_hc_theme)
+  })
+  
+  output$trendScoreTable <- renderReactable({
+    # Define data
+    data <- trend_indicator_table_data_r()
+    sparkline_data <- trend_sparkline_data_r()
+    
+    # Define column styles
+    col_names <- data %>%
+      select(-c(Country, Scores)) %>%
+      colnames()
+    country_col_def <- list(colDef(
+      cell = function(value, index) {
+        div(
+          class = "team",
+          img(class = "flag", alt = paste(value, "flag"),
+              src = sprintf("images/%s.png", value)),
+          div(class = "team_name", value),
+        )
+      },
+      filterable = TRUE,
+      minWidth = 110,
+      style = list(position = "sticky", left = 0, background = "white",
+                   zIndex = 1),
+      headerStyle = list(position = "sticky", left = 0, background = "white",
+                         zIndex = 1)
+    )) %>%
+      `names<-`("Country")
+    scores_cols_defs <- list(colDef(
+      cell = function(value) {
+        div(class = "trend_table_score",
+            style = list(backgroundColor = apply_alpha_to_color(my_pal(value),
+                                                                0.7)),
+            value)
+      },
+      style = function(value) {
+        list(alignSelf = "center", color = my_pal(value))
+      })) %>%
+      rep(length(col_names)) %>%
+      `names<-`(col_names)
+    trend_col_def <- list(colDef(
+      cell = function(value, index, name) {
+        # By default bars are not properly centered, because they are
+        # right aligned into the canvas and its width is not calculated
+        # from bars width and spacing. In order to get this effect, chart
+        # width is previously calculated.
+        bar_width = 10
+        bar_spacing = 2
+        width = length(sparkline_data$Scores[[index]]) * bar_width +
+          (length(sparkline_data$Scores[[index]] - 1) * bar_spacing)
+        sparkline(sparkline_data$Scores[[index]],
+                  type = "bar",
+                  chartRangeMin = 0,
+                  chartRangeMax = 100,
+                  barWidth = bar_width,
+                  barSpacing = bar_spacing,
+                  colorMap = my_pal(sparkline_data$Scores[[index]]),
+                  width = width
+                  )
+      },
+    # trend_col_def <- list(colDef(
+    #   cell = function(value, index) {
+    #     last_value <- tail(sparkline_data$Scores[[index]],1)
+    #     min_value <- min(sparkline_data$Scores[[index]])
+    #     max_value <- max(sparkline_data$Scores[[index]])
+    #     sparkline(sparkline_data$Scores[[index]],
+    #               chartRangeMin = min(unlist(sparkline_data$Scores)),
+    #               chartRangeMax = max(unlist(sparkline_data$Scores)),
+    #               width = "100px",
+    #               lineWidth = 2,
+    #               lineColor = my_pal(last_value),
+    #               fillColor = apply_alpha_to_color(my_pal(last_value),
+    #                                              0.3),
+    #               spotRadius = 3,
+    #               spotColor = "undefined",
+    #               minSpotColor = my_pal(min_value),
+    #               maxSpotColor = my_pal(max_value),
+    #               highlightSpotColor = rgb(240, 128, 0, maxColorValue = 255),
+    #               highlightLineColor = rgb(240, 128, 0, maxColorValue = 255)
+    #     ) 
+    #   },
+      align = "center",
+      sortable = FALSE,
+      style = list(alignSelf = 'center')
+    )) %>%
+      `names<-`("Scores")
+    col_defs <- c(country_col_def, scores_cols_defs, trend_col_def)
+    
+    # Create table
+    reactable(data,
+              showSortable = TRUE,
+              columns = col_defs)
+  })
+  
+  output$trendVarTable <- renderReactable({
+    # Define data
+    data <- trend_indicator_var_table_data_r()
+    #sparkline_data <- trend_sparkline_var_data_r()
+    sparkline_data <- trend_sparkline_data_r()
+    
+    # Define column styles
+    col_names <- data %>%
+      select(-c(Country, Trend)) %>%
+      colnames()
+    country_col_def <- list(colDef(
+      cell = function(value, index) {
+        div(
+          class = "team",
+          img(class = "flag", alt = paste(value, "flag"),
+              src = sprintf("images/%s.png", value)),
+          div(class = "team_name", value),
+        )
+      },
+      filterable = TRUE,
+      minWidth = 110,
+      style = list(position = "sticky", left = 0, background = "white",
+                   zIndex = 1),
+      headerStyle = list(position = "sticky", left = 0, background = "white",
+                         zIndex = 1)
+    )) %>%
+      `names<-`("Country")
+    variations_cols_defs <- list(colDef(
+      cell = function(value) {
+        if (value > 0) {
+          paste0("+", value)
+        } else {
+          value
+        }
+      },
+      align = "center",
+      style = function(value, index, name) {
+        list(alignSelf = "center", fontWeight = 600, color = trend_pal(value))
+      }
+    )) %>%
+      rep(length(col_names)) %>%
+      `names<-`(col_names)
+    # Hay un bug: No se renderiza correctamente cuando solo hay un valor.
+    # trend_col_def <- list(colDef(
+    #   cell = function(value, index, name) {
+    #     sparkline(c(10),
+    #               type = "bar",
+    #               chartRangeMin = min(unlist(sparkline_data$Variations)),
+    #               chartRangeMax = max(unlist(sparkline_data$Variations)),
+    #               barWidth = 5,
+    #               barSpacing = 2,
+    #               colorMap = trend_pal(sparkline_data$Variations[[index]]),
+    #               resize = TRUE
+    #     )
+    #   },
+    trend_col_def <- list(colDef(
+      cell = function(value, index) {
+        growth_value <- data$Cumulative[index]
+        sparkline(sparkline_data$Scores[[index]],
+                  chartRangeMin = min(unlist(sparkline_data$Scores)),
+                  chartRangeMax = max(unlist(sparkline_data$Scores)),
+                  width = "80px",
+                  lineWidth = 2,
+                  lineColor = trend_pal(growth_value),
+                  fillColor = apply_alpha_to_color(trend_pal(growth_value),
+                                                   0.3),
+                  spotRadius = 3,
+                  spotColor = "undefined",
+                  minSpotColor = rgb(220, 28, 19, maxColorValue = 255),
+                  maxSpotColor = rgb(46, 182, 44, maxColorValue = 255),
+                  highlightSpotColor = rgb(149, 75, 146, maxColorValue = 255),
+                  highlightLineColor = rgb(149, 75, 146, maxColorValue = 255)
+        )
+      },
+      align = "center",
+      sortable = FALSE,
+      style = list(alignSelf = "center")
+    )) %>%
+      `names<-`("Trend")
+    col_defs <- c(country_col_def, variations_cols_defs, trend_col_def)
+    
+    # Create table
+    reactable(data,
+              showSortable = TRUE,
+              columns = col_defs)
   })
 }
