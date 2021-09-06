@@ -1,7 +1,8 @@
 ##################### ui.R #####################
 
 dashboardPage(
-  dashboardHeader(title = "Gender Equality App"),
+  dashboardHeader(title = "Gender Equality App",
+                  dropdownMenuOutput("infoMenu")),
   dashboardSidebar(
     sidebarMenu(id = "sidebar_menu",
       menuItem("Map Explorer", tabName = "map", icon = icon("globe")),

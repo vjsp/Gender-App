@@ -1,7 +1,48 @@
 ################### server.R ###################
 
 function(input, output, session) {
+
+  ###================= Header =================###
   
+  ##----------------- Outputs -----------------##
+  
+  output$infoMenu <- renderMenu({
+    # Code to use Github icon available in v.4.7
+    icon_github <- icon("github")
+    icon_github[["attribs"]][["class"]] <- "fa fa-github"
+    
+    # Code to open links in new tabs
+    github_link <- "javascript:void(
+      window.open('https://github.com/vjsp/Gender-App', '_blank')
+    )"
+    linkedin_link <- "javascript:void(
+      window.open('https://www.linkedin.com/in/vj-sanchez-pollo/', '_blank')
+    )"
+    
+    dropdownMenu(type = "messages",
+                 # from for first line, message 2nd line smaller font
+                 messageItem(
+                   from = "Author",
+                   message = "Víctor Julio Sánchez Pollo",
+                   href = linkedin_link),
+                 messageItem(
+                   from = "Contact",
+                   message = "vjsanchez22411@alumnos.uemc.es",
+                   icon("envelope"),
+                   href = "mailto:vjsanchez22411@alumnos.uemc.es"),
+                 messageItem(
+                   from = "Code",
+                   message = "https://github.com/vjsp/Gender-App",
+                   icon = icon_github,
+                   href = github_link),
+                 badgeStatus = NULL,
+                 icon = icon("info-circle fa-lg"),
+                 headerText = "App Information"
+    )
+  })
+
+  
+
   ###============== Map Explorer ==============###
   
   ##------------- Reactive values -------------##
