@@ -288,28 +288,28 @@ section.sidebar .shiny-input-container {
 }
 
 
-/*------------ Trend tabs ------------*/
+/*------------ Trend and data tabs ------------*/
 
-#trend_tabs_row {
+.tabs_row {
   margin: 10px;
 }
 
-#trend_tabs_row .nav-tabs>li.active>a,
-#trend_tabs_row .nav-tabs>li.active>a:focus,
-#trend_tabs_row .nav-tabs>li.active>a:hover {
+.tabs_row .nav-tabs>li.active>a,
+.tabs_row .nav-tabs>li.active>a:focus,
+.tabs_row .nav-tabs>li.active>a:hover {
   color: rgb(149, 75, 146);
   border: 1px solid rgb(96, 92, 168);
   border-bottom-color: transparent;
 }
 
-#trend_tabs_row .nav>li>a:active,
-#trend_tabs_row .nav>li>a:focus,
-#trend_tabs_row .nav>li>a:hover {
+.tabs_row .nav>li>a:active,
+.tabs_row .nav>li>a:focus,
+.tabs_row .nav>li>a:hover {
   color: rgb(149, 75, 146);
   color: rgba(149, 75, 146, 0.8);
 }
 
-#trend_tabs_row .nav-tabs {
+.tabs_row .nav-tabs {
   border-bottom: 1px solid rgb(96, 92, 168);
 }
 
@@ -330,7 +330,7 @@ section.sidebar .shiny-input-container {
 /* Scores */
 .trend_table_score {
   position: relative;
-  float: right;
+  /*float: right;*/
   width: 50px;
   /*padding: 2px 5px;*/
   text-align: center;
@@ -340,4 +340,60 @@ section.sidebar .shiny-input-container {
   border: 1px solid rgb(0, 0, 0);
   border: 1px solid rgba(0, 0, 0, 0.03);
   border-radius: 30px;
+}
+
+
+/*-------- Download panel --------*/
+
+#download_panel {
+  display: -ms-flexbox;
+  display: -webkit-flex;
+  display: flex;
+  position: relative;
+  top: 10px;
+  left: 50%;
+  -webkit-transform: translateX(-140px);
+  -moz-transform: translateX(-140px);
+  -ms-transform: translateX(-140px);
+  -o-transform: translateX(-140px);
+  transform: translateX(-140px);
+}
+
+#download_type {
+  margin-bottom: 5px;
+}
+
+#download_type .btn {
+  width: 70px;
+  color: rgb(60, 141, 188);
+  background-color: transparent;
+}
+
+#download_type .btn:focus,
+#download_type .btn:hover {
+  color: rgb(149, 75, 146);
+  color: rgba(149, 75, 146, 0.8);
+  background-color: rgb(247,247,247);
+}
+
+#download_type .active,
+#download_type .active:focus,
+#download_type .active:hover {
+  color: rgb(149, 75, 146);
+  border: 1px solid rgb(96, 92, 168);
+  background-color: rgb(255,255,255);
+  box-shadow: none;
+}
+
+#downloadData {
+  width: 140px;
+  height: fit-content;
+  margin-bottom: 5px;
+  color: rgb(255,255,255);
+  background-color: rgb(96, 92, 168);
+}
+
+#downloadData:focus,
+#downloadData:hover {
+  background-color: rgb(84,80,150);
 }

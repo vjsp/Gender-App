@@ -36,6 +36,26 @@ dashboardPage(
       menuItem("Country Comparator", tabName = "comparator",
                icon = icon("balance-scale")),
       menuItem("Data Explorer", tabName = "data", icon = icon("folder-open")),
+      conditionalPanel("input.sidebar_menu == 'data' &&
+                       input.data_tabset_panel == 'Data table'",
+        class = "sidebar_conditional_panel",
+        pickerInput("data_years",
+          label = h5("Select years"),
+          choices = gei_years,
+          selected = gei_years,
+          options = list(`actions-box` = TRUE,
+                         `dropup-auto` = FALSE),
+          multiple = TRUE
+        ),
+        pickerInput("data_countries",
+          label = h5("Select countries"), 
+          choices = unique(levels(gei_data$Country)),
+          selected = unique(levels(gei_data$Country)),
+          options = list(`actions-box` = TRUE,
+                         `dropup-auto` = FALSE),
+          multiple = TRUE
+        )
+      ),
       menuItem("About", tabName = "about", icon = icon("book")),
       div(
         id = "legend_container",
@@ -61,9 +81,6 @@ dashboardPage(
         div(id = "map_outer", class = "outer", height = "100%",
           leafletOutput("myMap"),
           absolutePanel(id = "map_indicator_panel",
-            width = "90%",
-            top = 10,
-            left = "50%",
             draggable = TRUE,
             selectInput(inputId = "indicator",
               label = NULL,
@@ -126,9 +143,6 @@ dashboardPage(
         div(id = "trend_outer", class = "outer", height = "100%",
           fluidRow(
             div(id = "trend_indicator_panel",
-              width = "90%",
-              top = 10,
-              left = "50%",
               draggable = TRUE,
               selectInput(inputId = "trend_indicator",
                 label = NULL,
@@ -139,8 +153,8 @@ dashboardPage(
               )
             )
           ),
-          fluidRow(id = "trend_tabs_row",
-            tabsetPanel(
+          fluidRow(id = "trend_tabs_row", class = "tabs_row",
+            tabsetPanel(id = "trend_tabset_panel",
               tabPanel("Trend graph",  highchartOutput("trendChart")),
               tabPanel("Scores table", reactableOutput("trendScoreTable")),
               tabPanel("Variations table", reactableOutput("trendVarTable"))
@@ -149,7 +163,24 @@ dashboardPage(
         )
       ),
       # Data Explorer content
-      tabItem(tabName = "data")
+      tabItem(tabName = "data",
+        fluidRow(
+          div(id = "download_panel",
+              radioGroupButtons(
+                inputId = "download_type",
+                choices = c("CSV", "Excel"),
+                checkIcon = list(yes = icon("ok", lib = "glyphicon"))
+              ),
+              downloadButton("downloadData")
+          )
+        ),
+        fluidRow(class = "tabs_row",
+          tabsetPanel(id = "data_tabset_panel",
+            tabPanel("Data table", reactableOutput("dataTable")),
+            tabPanel("Metadata table", reactableOutput("metadataTable"))
+          )
+        )
+      )
     )
   ),
   skin = "purple"

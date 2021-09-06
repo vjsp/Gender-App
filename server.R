@@ -402,7 +402,7 @@ function(input, output, session) {
     set_selector_style(input$trend_indicator, "#trend_indicator_panel")
   })
   
-  # Event to avoid that both years or the trend range are set to the same value
+  # Event to avoid that both years of the trend range are set to the same value
   observeEvent(input$trend_years, {
     if (input$trend_years[1] == input$trend_years[2]) {
       if (input$trend_years[1] == min(gei_years)) {
@@ -482,8 +482,10 @@ function(input, output, session) {
                                                                 0.7)),
             value)
       },
+      align = "center",
       style = function(value) {
-        list(alignSelf = "center", color = my_pal(value))
+        list(display = "flex", flexDirection = "column", alignSelf = "center",
+             alignItems = "center", color = my_pal(value))
       })) %>%
       rep(length(col_names)) %>%
       `names<-`(col_names)
@@ -626,5 +628,137 @@ function(input, output, session) {
     reactable(data,
               showSortable = TRUE,
               columns = col_defs)
+  })
+
+
+
+  ###============= Data Explorer =============###
+  
+  ##----------- Reactive expressions -----------##
+  
+  # Reactive expression for the data used in the GEI data table
+  # It returns the GEI data for all the selected years and countries
+  data_table_r <- reactive({
+    gei_data %>%
+      filter(Year %in% input$data_years) %>%
+      filter(Country %in% input$data_countries)
+  })
+  
+  
+  ##---------------- Observers ----------------##
+  
+  # It disables download button when there is no data
+  observe({
+    shinyjs::toggleState(
+      id = "downloadData",
+      condition = !(input$data_tabset_panel == "Data table" &&
+                      nrow(data_table_r()) == 0)
+    )
+  })
+
+
+  ##----------------- Outputs -----------------##
+  
+  output$downloadData <- downloadHandler(
+    filename = function() {
+      extension <- ifelse (input$download_type == "CSV", "csv", "xlsx")
+      
+      ifelse(input$data_tabset_panel == "Data table",
+                      paste0("gei_data.", extension),
+                      paste0("gei_metadata.", extension))
+    },
+    content = function(file) {
+      if (input$data_tabset_panel == "Data table") {
+        data <- data_table_r()
+      } else {
+        data <- gei_metadata
+      }
+      
+      if (input$Download_type == "CSV")  {
+        write.csv2(data, file, row.names = FALSE)
+      } else {
+        write.xlsx(as.data.frame(data), file, row.names = FALSE)
+      }
+    }
+  )
+  
+  # output$dataTable <- renderDataTable({
+  #   datatable(gei_data,
+  #             filter = 'top',
+  #             extensions = c("FixedColumns","Buttons"),
+  #             options = list(scrollX = T, autoWidth = TRUE,
+  #                            fixedColumns = list(leftColumns = 2),
+  #                            scrollY = "200px",
+  #                            scrollCollapse = TRUE,
+  #                            paging =  FALSE,
+  #                            dom = 'Bfrtip',
+  #                            buttons = c('csv','excel'),
+  #                            columnDefs = list(
+  #                              list(width = '200px',
+  #                                   targets = "_all"
+  #                              )
+  #                            )),
+  #             rownames = FALSE)
+  # })
+  output$dataTable <- renderReactable({
+    col_defs <- list(
+      Year = colDef(
+        width = 60,
+        style = list(position = "sticky", left = 0, background = "white",
+                     zIndex = 1),
+        headerStyle = list(position = "sticky", left = 0, background = "white",
+                           zIndex = 1)
+      ),
+      "Country code" = colDef(show = FALSE),
+      Country = colDef(
+        width = 120,
+        style = list(position = "sticky", left = "60px", background = "white",
+                     zIndex = 1),
+        headerStyle = list(position = "sticky", left = "60px",
+                           background = "white", zIndex = 1)
+      )
+    )
+    reactable(data_table_r(),
+              showSortable = TRUE,
+              #pagination = FALSE,
+              defaultColDef = colDef(
+                minWidth = 180
+              ),
+              columns = col_defs,
+              style = list(
+                fontSize = 12
+              )
+    )
+  })
+  
+  # output$metadataTable <- renderDataTable({
+  #   datatable(gei_metadata,
+  #             options = list(scrollX = T, pageLength = 5),
+  #             rownames = FALSE)
+  # })
+  output$metadataTable <- renderReactable({
+    col_defs <- list(
+      Domain = colDef(
+        width = 80
+      ),
+      N = colDef(
+        width = 50
+      ),
+      Subdomain = colDef(
+        maxWidth = 120
+      ),
+      Indicator = colDef(
+        maxWidth = 150
+      )
+    )
+    reactable(gei_metadata,
+              showSortable = TRUE,
+              pagination = FALSE,
+              columns = col_defs,
+              height = "450px",
+              style = list(
+                fontSize = 12
+              )
+    )
   })
 }

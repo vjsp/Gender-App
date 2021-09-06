@@ -7,11 +7,13 @@ default_repos = "http://cran.us.r-project.org"
 # Install and load necessary libraries
 if(!require(data.table)) install.packages("data.table", repos = default_repos)
 if(!require(dplyr)) install.packages("dplyr", repos = default_repos)
+if(!require(DT)) install.packages("DT", repos = default_repos)
 if(!require(formattable)) install.packages("formattable",repos = default_repos)
 if(!require(geojsonio)) install.packages("geojsonio", repos = default_repos)
 if(!require(highcharter)) install.packages("highcharter", repos = default_repos)
 if(!require(leaflet)) install.packages("leaflet", repos = defualt_repos)
 if(!require(magrittr)) install.packages("magrittr", repos = default_repos)
+if(!require(openxlsx)) install.packages("openxlsx", repos = default_repos)
 if(!require(radarchart)) install.packages("radarchart", repos = default_repos)
 if(!require(reactable)) install.packages("reactable", repos = default_repos)
 if(!require(readxl)) install.packages("readxl", repos = default_repos)
