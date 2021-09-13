@@ -2,13 +2,23 @@
 
 /*---------- Dropdown menu -----------*/
 
-#infoMenu .dropdown-menu {
-  z-index: 20;
-}
-
-#infoMenu .header {
+#infoMenu .header,
+#creditsMenu .header {
   color: rgb(84,80,150);
 }
+
+#creditsMenu img {
+  width: 30px;
+  height: 30px;
+  margin-right: 5px;
+}
+
+.credit_text {
+  display: inline-block;
+  vertical-align: middle;
+  font-size: 12px;
+}
+
 
 
 /*============== Sidebar ==============*/
@@ -192,16 +202,16 @@ section.sidebar .shiny-input-container {
   width: 90%;
 }
 
-#map_indicator_panel .selectize-dropdown [data-value='GEI'],
-#trend_indicator_panel .selectize-dropdown [data-value='GEI'],
+#map_indicator_panel .selectize-dropdown [data-value="GEI"],
+#trend_indicator_panel .selectize-dropdown [data-value="GEI"],
 .GEI_option {
   font-weight: bold;
   text-transform: uppercase;
   color: rgb(149, 75, 146);
 }
 
-#map_indicator_panel .selectize-dropdown [data-value^='D'],
-#trend_indicator_panel .selectize-dropdown [data-value^='D'],
+#map_indicator_panel .selectize-dropdown [data-value^="D"],
+#trend_indicator_panel .selectize-dropdown [data-value^="D"],
 .Domain_option {
   font-weight: bold;
   text-transform: uppercase;
@@ -209,16 +219,16 @@ section.sidebar .shiny-input-container {
   color: rgba(50, 50, 50, 0.9);
 }
 
-#map_indicator_panel .selectize-dropdown [data-value^='S'],
-#trend_indicator_panel .selectize-dropdown [data-value^='S'],
+#map_indicator_panel .selectize-dropdown [data-value^="S"],
+#trend_indicator_panel .selectize-dropdown [data-value^="S"],
 .Subdomain_option {
   font-weight: bold;
   color: rgb(40, 40, 40);
   color: rgba(40, 40, 40, 0.9);
 }
 
-#map_indicator_panel .selectize-dropdown [data-value^='I'],
-#trend_indicator_panel .selectize-dropdown [data-value^='I'],
+#map_indicator_panel .selectize-dropdown [data-value^="I"],
+#trend_indicator_panel .selectize-dropdown [data-value^="I"],
 .Indicator_option {
   color: rgb(30, 30, 30);
   color: rgba(30, 30, 30, 0.9);
@@ -409,4 +419,139 @@ section.sidebar .shiny-input-container {
 #downloadData:focus,
 #downloadData:hover {
   background-color: rgb(84,80,150);
+}
+
+
+/*----------- GEI comparator ----------*/
+
+#gei_comparator_container .box {
+  margin: 10px 0;
+  border: 1px solid rgb(96, 92, 168);
+  border-radius: 4px;
+}
+
+.country_comparator_panel {
+  padding: 11px 15px;
+  text-align: center;
+}
+
+#first_country_panel .selectize-input,
+#first_country_panel .selectize-dropdown{
+  border-color: rgb(0, 74, 153);
+}
+
+#second_country_panel .selectize-input,
+#second_country_panel .selectize-dropdown{
+  border-color: rgb(206, 153, 0);
+}
+
+
+/*---------- Domains buttons ---------*/
+
+#domains_buttons_container {
+  margin: 0 15px;
+}
+
+#domains_buttons_container .shiny-input-radiogroup {
+  margin: 0;
+}
+
+#domains_buttons_container .btn {
+  font-size: 12px;
+  border: none;
+}
+
+#domains_buttons_container .btn:focus,
+#domains_buttons_container .btn:hover,
+#domains_buttons_container .active,
+#domains_buttons_container .active:focus,
+#domains_buttons_container .active:hover {
+  color: white;
+  box-shadow: none;
+}
+
+.work_button {
+  background-color: rgb(74, 174, 201);
+  background-color: rgba(74, 174, 201, 0.2);
+}
+
+.work_button.active,
+.work_button:hover,
+.work_button:focus {
+  background-color: rgb(52, 150, 176) !important
+}
+
+.money_button {
+  background-color: rgb(255, 184, 21);
+  background-color: rgba(255, 184, 21, 0.2);
+}
+
+.money_button.active,
+.money_button:hover,
+.money_button:focus {
+  background-color: rgb(230, 160, 0) !important
+}
+
+.knowledge_button {
+  background-color: rgb(117, 174, 130);
+  background-color: rgba(117, 174, 130, 0.2);
+}
+
+.knowledge_button.active,
+.knowledge_button:hover,
+.knowledge_button:focus {
+  background-color: rgb(91, 155, 105) !important
+}
+
+.time_button {
+  background-color: rgb(231, 139, 105);
+  background-color: rgba(231, 139, 105, 0.2);
+}
+
+.time_button.active,
+.time_button:hover,
+.time_button:focus {
+  background-color: rgb(225, 108, 66) !important
+}
+
+.power_button {
+  background-color: rgb(238, 123, 120);
+  background-color: rgba(238, 123, 120, 0.2);
+}
+
+.power_button.active,
+.power_button:hover,
+.power_button:focus {
+  background-color: rgb(232, 83, 79) !important
+}
+
+.health_button {
+  background-color: rgb(205, 148, 172);
+  background-color: rgba(205, 148, 172, 0.2);
+}
+
+.health_button.active,
+.health_button:hover,
+.health_button:focus {
+  background-color: rgb(190, 117, 148) !important
+}
+
+
+/*--------- Domain comparator --------*/
+
+#domain_comparator_container .box {
+  margin: 10px 0;
+  border: 1px solid;
+  border-radius: 4px;
+}
+
+#domain_charts_panel {
+  padding: 10px 0;
+}
+
+#domainDiffHtmlValue {
+  padding: 5px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: bold;
 }

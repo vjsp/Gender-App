@@ -54,7 +54,13 @@ current_year <- max(gei_years)
 default_year_range <- c(min(gei_years), max(gei_years))
 
 
-###================ Palettes ================###
+###=========== Colors & Palettes ===========###
+
+gei_color <- rgb(149, 75, 146, maxColorValue = 255)
+first_country_color <- rgb(0, 74, 153, maxColorValue = 255);
+second_country_color <- rgb(206, 153, 0, maxColorValue = 255);
+default_green <- rgb(46, 182, 44, maxColorValue = 255)
+default_red <- rgb(220, 28, 19, maxColorValue = 255)
 
 # Define scores color palette taking into account all possible values (0-100)
 my_pal <- colorNumeric(palette = "viridis",
@@ -201,26 +207,54 @@ get_max_value <- function(indicator) {
 # @param title - The chart's title (subtitle)
 # @param color - The color used to fill the chart
 # @return A gauge chart
-create_gauge <- function(data, max_value, title, color) {
+create_gender_gauge <- function(data, max_value, title, color) {
   highchart() %>%
-    hc_chart(type = 'solidgauge') %>%
+    hc_chart(type = "solidgauge") %>%
     hc_add_series(data, showInLegend = FALSE) %>%
     hc_subtitle(text = title, y = 25, style = list(fontSize = "12px")) %>%
     hc_yAxis(min = 0, max = max_value, lineWidth = 0, minorTickWidth = 0,
              tickPositions = list(0, max_value),
              labels = list(y = 15, distance = 0), showLastLabel = TRUE) %>%
     hc_pane(startAngle = -120, endAngle = 120, size = "100%",
-            background = list(outerRadius = '100%', innerRadius = '80%',
-                              shape = 'arc')) %>%
-    hc_plotOptions(solidgauge = list(innerRadius = '80%',
-                                     dataLabels = list(y = -20,
-                                                       borderWidth = 0,
-                                                       useHTML = TRUE, 
-                                                       style = list(
-                                                         fontSize = '12px')
-                                     ))) %>%
+            background = list(outerRadius = "100%", innerRadius = "80%",
+                              shape = "arc")) %>%
+    hc_plotOptions(solidgauge = list(
+      innerRadius = "80%",
+      dataLabels = list(y = -20, borderWidth = 0, useHTML = TRUE,
+                        style = list(fontSize = "12px"))
+    )) %>%
     hc_colors(color = color) %>%
     hc_tooltip(enabled = FALSE) %>%
+    hc_add_theme(my_hc_theme)
+}
+
+# Function to create the gauge charts for indicators values
+# @param data - The value (number) to be represented
+# @param name - The serie's name
+# @param color - The color used to fill the chart
+# @param star - Boolean that indicates if a star must be shown next to the value
+# @param value_size - A valid font-size for the value label
+# @return A gauge chart
+create_indicator_gauge <- function(data, name, color, star, value_size) {
+  highchart() %>%
+    hc_chart(type = "solidgauge", backgroundColor = "transparent") %>%
+    hc_add_series(data, name = name, showInLegend = FALSE) %>%
+    hc_yAxis(min = 0, max = 100, tickWidth = 0, minorTicks = FALSE,
+             labels = list(enabled = FALSE)) %>%
+    hc_pane(size = "100%",
+            background = list(outerRadius = "100%", innerRadius = "75%",
+                              shape = "arc")) %>%
+    hc_plotOptions(solidgauge = list(
+      innerRadius = "75%",
+      dataLabels = list(y = -15, borderWidth = 0, useHTML = TRUE,
+                        format =  paste0("{point.y}",
+                                         ifelse(star,
+                                                " <span>&#42;</span>",
+                                                "")),
+                        style = list(fontSize = value_size,
+                                     color = my_pal(data)))
+    )) %>%
+    hc_colors(color = color) %>%
     hc_add_theme(my_hc_theme)
 }
 
@@ -271,7 +305,7 @@ apply_alpha_to_color <- function(color, alpha = 1) {
 
 ###=============== JS scripts ===============###
 
-# Javascript function to apply some animations on conditional panels
+# Javascript function to apply some styles and animations
 js <- "
 $(document).ready(function(){
   // Delay transitions in map_graphs conditional panels
@@ -289,5 +323,13 @@ $(document).ready(function(){
       $('.sidebar_conditional_panel').css('overflow', 'visible');
     }, 1000);
   });
+  
+  // Color styling in domains buttons
+  $('#comp_domain [value=\"WORK\"]').parent().addClass('work_button');
+  $('#comp_domain [value=\"MONEY\"]').parent().addClass('money_button');
+  $('#comp_domain [value=\"KNOWLEDGE\"]').parent().addClass('knowledge_button');
+  $('#comp_domain [value=\"TIME\"]').parent().addClass('time_button');
+  $('#comp_domain [value=\"POWER\"]').parent().addClass('power_button');
+  $('#comp_domain [value=\"HEALTH\"]').parent().addClass('health_button');
 });
 "

@@ -2,7 +2,8 @@
 
 dashboardPage(
   dashboardHeader(title = "Gender Equality App",
-                  dropdownMenuOutput("infoMenu")),
+                  dropdownMenuOutput("infoMenu"),
+                  dropdownMenuOutput("creditsMenu")),
   dashboardSidebar(
     sidebarMenu(id = "sidebar_menu",
       menuItem("Map Explorer", tabName = "map", icon = icon("globe")),
@@ -159,6 +160,74 @@ dashboardPage(
               tabPanel("Trend graph",  highchartOutput("trendChart")),
               tabPanel("Scores table", reactableOutput("trendScoreTable")),
               tabPanel("Variations table", reactableOutput("trendVarTable"))
+            )
+          )
+        )
+      ),
+      # Country Comparator content
+      tabItem(tabName = "comparator",
+        fluidRow(id = "gei_comparator_container",
+          box(width = 12,
+            column(id = "first_country_panel",
+                   class = "country_comparator_panel",
+                   width = 4,
+              highchartOutput("firstGEIChart", height = "120"),
+              selectInput(inputId = "comp_first_country",
+                label = NULL,
+                choices = unique(levels(gei_data$Country)),
+                selected = "Spain"
+              ),
+              selectInput(inputId = "comp_first_year",
+                label = NULL,
+                choices = gei_years,
+                selected = current_year
+              ),
+              height = 250
+            ),
+            column(width = 4,
+              highchartOutput("compDomainsChart", height = 250)
+            ),
+            column(id = "second_country_panel",
+                   class = "country_comparator_panel",
+                   width = 4,
+              highchartOutput("secondGEIChart", height = "120"),
+              selectInput(inputId = "comp_second_country",
+                label = NULL,
+                choices = unique(levels(gei_data$Country)),
+                selected = "European Union 28"
+              ),
+              selectInput(inputId = "comp_second_year",
+                label = NULL,
+                choices = gei_years,
+                selected = current_year
+              )
+            )
+          )
+        ),
+        fluidRow(id = "domains_buttons_container",
+          radioGroupButtons(
+            inputId = "comp_domain",
+            choices = gei_indicators %>%
+              filter(Type == "Domain") %>%
+              pull("Indicator (s)"),
+            justified = TRUE
+          ),
+        ),
+        fluidRow(id = "domain_comparator_container",
+          box(width = 12,
+            column(id = "domain_charts_panel", width = 2,
+              fluidRow(
+                highchartOutput("firstDomainChart", height = "100"),
+              ),
+              fluidRow(
+                htmlOutput("domainDiffHtmlValue")
+              ),
+              fluidRow(
+                highchartOutput("secondDomainChart", height = "100"),
+              )
+            ),
+            column(width = 4,
+              highchartOutput("compSubdomainsChart", height = 250)
             )
           )
         )
