@@ -1,10 +1,13 @@
 ############## Datasets treatment ##############
+# @author Víctor Julio Sánchez Pollo           #
+# @version 18/09/2021                          #
+################################################
 
 ###=============== Libraries ===============###
 
-# Define used repositories
+# Used repositories
 default_repos = "http://cran.us.r-project.org"
-# Install and load necessary libraries
+# Libraries installation and loading
 if(!require(dplyr)) install.packages("dplyr", repos = default_repos)
 if(!require(geojsonio)) install.packages("geojsonio", repos = default_repos)
 if(!require(openxlsx)) install.packages("openxlsx", repos = default_repos)
@@ -53,20 +56,20 @@ read_all_sheets <- function(xlsx_file, ...) {
 
 ###================== Main ==================###
 
-## Read files
+## File reading
 gei_file_data <- read_all_sheets(gei_file_path, sep.names = " ",
                                  fillMergedCells = TRUE)
 world_geo_data <- geojson_read("data/world.geo.json", what = "sp")
 
 
-## Build countries dataframe
+## Countries dataframe building
 countries_df <- data.frame("Country code" = world_geo_data$iso_a2,
                            Country = world_geo_data$name,
                            check.names = FALSE) %>%
   rbind(eu_regions_df)
   
 
-## Build GEI metadata dataframe
+## GEI metadata dataframe building
 gei_metadata_df <- data.frame(gei_file_data["Metadata"]) %>%
   # Remove unnecessary columns and duplicates
   `colnames<-`(paste0("X", 1:ncol(.))) %>%
@@ -87,7 +90,7 @@ gei_metadata_df <- data.frame(gei_file_data["Metadata"]) %>%
 saveRDS(gei_metadata_df, file = "data/GEI_metadata.rds")
 
 
-## Build GEI data dataframe
+## GEI data dataframe building
 gei_data_df <- gei_file_data[-which(names(gei_file_data) == "Metadata")] %>%
   # Put all years data into a single df
   bind_rows(.id = "Year") %>%
@@ -114,7 +117,7 @@ gei_data_df <- gei_file_data[-which(names(gei_file_data) == "Metadata")] %>%
 saveRDS(gei_data_df, file = "data/GEI_data.rds")
            
 
-## Build GEI indicators dataframe
+## GEI indicators dataframe building
 # Create a df with all levels indicators from metadata
 gei_indicators_df <- gei_metadata_df %>%
   ungroup() %>%

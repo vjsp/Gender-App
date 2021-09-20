@@ -1,4 +1,7 @@
 ################### server.R ###################
+# @author Víctor Julio Sánchez Pollo           #
+# @version 18/09/2021                          #
+################################################
 
 function(input, output, session) {
 
@@ -6,7 +9,7 @@ function(input, output, session) {
   
   ##----------------- Outputs -----------------##
   
-  output$infoMenu <- renderMenu({
+  output$info_menu <- renderMenu({
     # Code to use Github icon available in v.4.7
     icon_github <- icon("github")
     icon_github[["attribs"]][["class"]] <- "fa fa-github"
@@ -40,7 +43,7 @@ function(input, output, session) {
     )
   })
   
-  output$creditsMenu <- renderMenu({
+  output$credits_menu <- renderMenu({
     # Code to open links in new tabs
     eige_link <- "javascript:void(
       window.open('https://eige.europa.eu', '_blank')
@@ -55,7 +58,7 @@ function(input, output, session) {
                      HTML("<img src='images/icons/eige.svg'
                           alt='EIGE Icon'>"),
                      div(class = "credit_text",
-                         "All data and desciptions are property of the",
+                         "All data and descriptions are property of the",
                          br(),
                          "European Institute for Gender Equality (EIGE)")
                    ),
@@ -147,24 +150,6 @@ function(input, output, session) {
     map_year_data_r() %>% pull(sel_indicator_r())
   })
   
-  # Reactive expression for map radarchart data
-  # It returns domains values for the selected country and year
-  map_rc_data_r <- reactive({
-    gei_year_data_r() %>% 
-      as.data.frame() %>% 
-      filter(`Country code` == sel_country_r()) %>%
-      select("Country",
-             gei_full_indicators %>% 
-               filter(`Parent Id` == "GEI") %>% 
-               select("Indicator (s)") %>%
-               unlist(use.names=FALSE)
-      ) %>%
-      `rownames<-`(.$`Country`) %>%
-      select(-`Country`) %>%
-      t() %>%
-      as_tibble(rownames = "Domain")
-  })
-  
   # Reactive expression for map indicators chart data
   # It returns indicators values for the selected country and year
   map_indicators_chart_data_r <- reactive({
@@ -176,13 +161,13 @@ function(input, output, session) {
     
     indicators_chart_data <- as.data.frame(gei_year_data_r()) %>%
       filter(`Country code` == sel_country_r()) %>%
-      select("Country",
+      select(Country,
              gei_full_indicators %>% 
                filter(`Parent Id` == indicator_id) %>% 
                select("Indicator (s)") %>%
-               unlist(use.names=FALSE)
+               unlist(use.names = FALSE)
       ) %>%
-      gather("Indicator","Score",2:ncol(.))
+      gather("Indicator", "Score", 2:ncol(.))
     
     # Metrics are not limited to a score between 0 and 100, so the palette
     # can not be used
@@ -196,9 +181,9 @@ function(input, output, session) {
 
   ##---------------- Observers ----------------##
   
-  # It updates leaflet map when selection is changed 
+  # It updates the leaflet map when selection is changed 
   observe(
-    leafletProxy("myMap") %>%
+    leafletProxy("my_map") %>%
       clearControls() %>%
       clearShapes() %>%
       addPolygons(data = map_data_r(),
@@ -217,9 +202,9 @@ function(input, output, session) {
                   labelOptions = labelOptions(
                     direction = "auto",
                     style = list(padding = "3px 8px",
-                                 "text-align" = "center",
                                  "font-size" = "13px",
-                                 "font-weight" = "normal"))
+                                 "font-weight" = "normal",
+                                 "text-align" = "center"))
                   ) %>%
       addLegend("bottomleft",
                 pal = my_pal,
@@ -230,13 +215,13 @@ function(input, output, session) {
   ##------------- Event observers -------------##
   
   observeEvent(input$indicator, {
-    # Set the indicator variable value
+    # Sets the indicator variable value
     sel_indicator_r(gei_full_indicators %>%
       filter(Id == input$indicator) %>%
       pull("Indicator (s)")
     )
     
-    # Adapt the selector style taking into account the selected indicator
+    # Adapts the selector style taking into account the selected indicator
     set_selector_style(input$indicator, "#map_indicator_panel")
   })
   
@@ -244,26 +229,28 @@ function(input, output, session) {
     sel_country_r("EU28")
   })
   
-  observeEvent(input$myMap_shape_click, {
-    sel_country_r(input$myMap_shape_click$id)
+  observeEvent(input$my_map_shape_click, {
+    sel_country_r(input$my_map_shape_click$id)
   })
 
 
   ##----------------- Outputs -----------------##
   
-  basemap <- leaflet() %>%
+  basemap <- leaflet(options = leafletOptions(zoomSnap = 0.5,
+                                              zoomDelta = 0.5)) %>%
     addProviderTiles(providers$CartoDB.Positron,
                      options = providerTileOptions(noWrap = TRUE)) %>%
-    setView(30.44, 56.00, 3)
-  output$myMap <- renderLeaflet({basemap})
+    setView(30.44, 56.00, 3.5)
+  output$my_map <- renderLeaflet({basemap})
   
-  output$euHtmlValue <- renderUI({
+  output$eu_html_value <- renderUI({
     value <- eu_indicator_value_r()
     div(HTML(sprintf("European Union 28 <text style='color:%s'> %s </text>",
-                     my_pal(value), value)))
+                     my_pal(value),
+                     value)))
   })
   
-  output$top3Table <- renderFormattable({
+  output$top_3_table <- renderFormattable({
     table_format <- list(format_color_formattable())
     names(table_format) <- sel_indicator_r()
     formattable(
@@ -275,7 +262,7 @@ function(input, output, session) {
     )
   })
   
-  output$bottom3Table <- renderFormattable({
+  output$bottom_3_table <- renderFormattable({
     table_format <- list(format_color_formattable())
     names(table_format) <- sel_indicator_r()
     formattable(
@@ -287,19 +274,7 @@ function(input, output, session) {
     )
   })
   
-  output$radarPlot <- renderChartJSRadar({
-    chartJSRadar(map_rc_data_r(),
-                 colMatrix = matrix(c(col2rgb(my_pal(gei_indicator_value_r())))),
-                 polyAlpha = 0.4,
-                 responsive = TRUE,
-                 labelSize = 12,
-                 showLegend = FALSE,
-                 main = paste(gei_year_country_data_r()$Country,
-                              gei_indicator_value_r())
-    )
-  })
-  
-  output$domainsChart <- renderHighchart({
+  output$domains_chart <- renderHighchart({
     shiny::validate(need(input$indicator == "GEI", message = FALSE))
     data = map_indicators_chart_data_r()
     highchart() %>%
@@ -318,7 +293,7 @@ function(input, output, session) {
       hc_add_theme(my_hc_theme)
   })
   
-  output$subdomainsChart <- renderHighchart({
+  output$subdomains_chart <- renderHighchart({
     shiny::validate(need(substr(input$indicator,1,1) == "D", message = FALSE))
     data <- map_indicators_chart_data_r()
     highchart() %>%
@@ -338,12 +313,12 @@ function(input, output, session) {
       hc_add_theme(my_hc_theme)
   })
   
-  output$indicatorsChart <- renderHighchart({
+  output$indicators_chart <- renderHighchart({
     shiny::validate(need(substr(input$indicator,1,1) == "S", message = FALSE))
     data <- map_indicators_chart_data_r()
     highchart() %>%
       hc_chart(marginLeft = "160") %>%
-      hc_add_series(data, type="bar", name = unique(data$Country),
+      hc_add_series(data, type = "bar", name = unique(data$Country),
                     hcaes(x = Indicator, y = Score, color = color),
                     showInLegend = FALSE) %>%
       hc_title(text =  gei_year_country_data_r()$Country,
@@ -356,38 +331,38 @@ function(input, output, session) {
                             } else {
                               data$Indicator
                             },
-               labels = list(style = list(textOverflow = "none",
-                                          fontSize = "10px"))) %>%
+               labels = list(style = list(fontSize = "10px",
+                                          textOverflow = "none"))) %>%
       hc_yAxis(min = 0, max = 100, tickAmount = 5, showLastLabel = TRUE) %>%
       hc_add_theme(my_hc_theme)
   })
   
-  output$countryHtmlValue <- renderUI({
-    rgb <- col2rgb(my_pal(gei_indicator_value_r()))
-    rgbStr <- sprintf('rgb(%d,%d,%d)', rgb[1], rgb[2], rgb[3])
+  output$country_html_value <- renderUI({
     value <- gei_indicator_value_r()
     HTML(sprintf(
       paste0("<text id = 'country_html_title'><tspan>%s</tspan></text>",
              "<text id = 'country_html_subtitle' style = 'color:%s'>",
              "<tspan>%s</tspan></text>"),
-      gei_year_country_data_r()$Country, rgbStr, value))
+      gei_year_country_data_r()$Country,
+      my_pal(gei_indicator_value_r()),
+      value))
   })
   
-  output$totalChart <- renderHighchart({
+  output$total_chart <- renderHighchart({
     shiny::validate(need(substr(input$indicator,1,1) == "I", message = FALSE))
     data <- map_indicators_chart_data_r()$Score[3]
     max_value <- get_max_value(sel_indicator_r())
     create_gender_gauge(data, max_value, "Total", "green")
   })
   
-  output$womenChart <- renderHighchart({
+  output$women_chart <- renderHighchart({
     shiny::validate(need(substr(input$indicator,1,1) == "I", message = FALSE))
     data <- map_indicators_chart_data_r()$Score[1]
     max_value <- get_max_value(sel_indicator_r())
     create_gender_gauge(data, max_value, "Women", "pink")
   })
   
-  output$menChart <- renderHighchart({
+  output$men_chart <- renderHighchart({
     shiny::validate(need(substr(input$indicator,1,1) == "I", message = FALSE))
     data <- map_indicators_chart_data_r()$Score[2]
     max_value <- get_max_value(sel_indicator_r())
@@ -442,7 +417,7 @@ function(input, output, session) {
       spread(Year, Indicator)
     n_cols <- length(score_df)
     cbind(score_df[1],
-          score_df[-c(1,2)] - score_df[-c(1,n_cols)],
+          score_df[-c(1, 2)] - score_df[-c(1, n_cols)],
           setNames(score_df[n_cols] - score_df[2], "Cumulative")) %>%
       mutate_if(is.numeric, round, digits = 2) %>%
       mutate(Trend = NA)
@@ -462,7 +437,7 @@ function(input, output, session) {
   trend_sparkline_var_data_r <- reactive({
     trend_indicator_var_table_data_r() %>%
       select(-c(Cumulative, Variations)) %>%
-      gather("Year","Trend",2:ncol(.)) %>%
+      gather("Year", "Trend", 2:ncol(.)) %>%
       group_by(Country) %>%
       summarise(Variations = list(Variations), .groups = "drop")
   })
@@ -471,13 +446,13 @@ function(input, output, session) {
   ##------------- Event observers -------------##
   
   observeEvent(input$trend_indicator, {
-    # Set the indicator variable value
+    # It sets the indicator variable value
     trend_sel_indicator_r(gei_full_indicators %>%
                             filter(Id == input$trend_indicator) %>%
                             pull("Indicator (s)")
     )
     
-    # Adapt the selector style taking into account the selected indicator
+    # It adapts the selector style taking into account the selected indicator
     set_selector_style(input$trend_indicator, "#trend_indicator_panel")
   })
   
@@ -505,7 +480,7 @@ function(input, output, session) {
    
   ##----------------- Outputs -----------------##
   
-  output$trendChart <- renderHighchart({
+  output$trend_chart <- renderHighchart({
     shiny::validate(need(input$trend_countries != "",
                          message = "Please, select any country"))
     data <- trend_indicator_chart_data_r()
@@ -528,7 +503,7 @@ function(input, output, session) {
       hc_add_theme(my_hc_theme)
   })
   
-  output$trendScoreTable <- renderReactable({
+  output$trend_score_table <- renderReactable({
     # Define data
     data <- trend_indicator_table_data_r()
     sparkline_data <- trend_sparkline_data_r()
@@ -540,18 +515,18 @@ function(input, output, session) {
     country_col_def <- list(colDef(
       cell = function(value, index) {
         div(
-          class = "team",
+          class = "flagged_country",
           img(class = "flag", alt = paste(value, "flag"),
               src = sprintf("images/flags/%s.png", value)),
-          div(class = "team_name", value),
+          div(class = "country_name", value)
         )
       },
       filterable = TRUE,
       minWidth = 110,
-      style = list(position = "sticky", left = 0, background = "white",
-                   zIndex = 1),
-      headerStyle = list(position = "sticky", left = 0, background = "white",
-                         zIndex = 1)
+      style = list(position = "sticky", zIndex = 1, left = 0,
+                   background = "white"),
+      headerStyle = list(position = "sticky", zIndex = 1, left = 0,
+                         background = "white")
     )) %>%
       `names<-`("Country")
     scores_cols_defs <- list(colDef(
@@ -588,27 +563,6 @@ function(input, output, session) {
                   width = width
                   )
       },
-    # trend_col_def <- list(colDef(
-    #   cell = function(value, index) {
-    #     last_value <- tail(sparkline_data$Scores[[index]],1)
-    #     min_value <- min(sparkline_data$Scores[[index]])
-    #     max_value <- max(sparkline_data$Scores[[index]])
-    #     sparkline(sparkline_data$Scores[[index]],
-    #               chartRangeMin = min(unlist(sparkline_data$Scores)),
-    #               chartRangeMax = max(unlist(sparkline_data$Scores)),
-    #               width = "100px",
-    #               lineWidth = 2,
-    #               lineColor = my_pal(last_value),
-    #               fillColor = apply_alpha_to_color(my_pal(last_value),
-    #                                              0.3),
-    #               spotRadius = 3,
-    #               spotColor = "undefined",
-    #               minSpotColor = my_pal(min_value),
-    #               maxSpotColor = my_pal(max_value),
-    #               highlightSpotColor = rgb(240, 128, 0, maxColorValue = 255),
-    #               highlightLineColor = rgb(240, 128, 0, maxColorValue = 255)
-    #     ) 
-    #   },
       align = "center",
       sortable = FALSE,
       style = list(alignSelf = 'center')
@@ -622,10 +576,9 @@ function(input, output, session) {
               columns = col_defs)
   })
   
-  output$trendVarTable <- renderReactable({
+  output$trend_var_table <- renderReactable({
     # Define data
     data <- trend_indicator_var_table_data_r()
-    #sparkline_data <- trend_sparkline_var_data_r()
     sparkline_data <- trend_sparkline_data_r()
     
     # Define column styles
@@ -635,18 +588,18 @@ function(input, output, session) {
     country_col_def <- list(colDef(
       cell = function(value, index) {
         div(
-          class = "team",
+          class = "flagged_country",
           img(class = "flag", alt = paste(value, "flag"),
               src = sprintf("images/flags/%s.png", value)),
-          div(class = "team_name", value),
+          div(class = "country_name", value),
         )
       },
       filterable = TRUE,
       minWidth = 110,
-      style = list(position = "sticky", left = 0, background = "white",
-                   zIndex = 1),
-      headerStyle = list(position = "sticky", left = 0, background = "white",
-                         zIndex = 1)
+      style = list(position = "sticky", zIndex = 1, left = 0,
+                   background = "white"),
+      headerStyle = list(position = "sticky", zIndex = 1, left = 0,
+                         background = "white")
     )) %>%
       `names<-`("Country")
     variations_cols_defs <- list(colDef(
@@ -659,24 +612,11 @@ function(input, output, session) {
       },
       align = "center",
       style = function(value, index, name) {
-        list(alignSelf = "center", fontWeight = 600, color = trend_pal(value))
+        list(alignSelf = "center", color = trend_pal(value), fontWeight = 600)
       }
     )) %>%
       rep(length(col_names)) %>%
       `names<-`(col_names)
-    # Hay un bug: No se renderiza correctamente cuando solo hay un valor.
-    # trend_col_def <- list(colDef(
-    #   cell = function(value, index, name) {
-    #     sparkline(c(10),
-    #               type = "bar",
-    #               chartRangeMin = min(unlist(sparkline_data$Variations)),
-    #               chartRangeMax = max(unlist(sparkline_data$Variations)),
-    #               barWidth = 5,
-    #               barSpacing = 2,
-    #               colorMap = trend_pal(sparkline_data$Variations[[index]]),
-    #               resize = TRUE
-    #     )
-    #   },
     trend_col_def <- list(colDef(
       cell = function(value, index) {
         growth_value <- data$Cumulative[index]
@@ -710,9 +650,231 @@ function(input, output, session) {
   })
 
   
+  ###============ Country Explorer ============###
+  
+  ##------------- Reactive values -------------##
+  
+  # Reactive value for the selected domain in the country explorer tab
+  country_domain_r <- reactiveVal("Gender Equality Index")
+  
+  ##----------- Reactive expressions -----------##
+  
+  # Reactive expression for the selected country trend data used in the chart
+  # It returns the GEI and domains data for the selected country
+  country_trend_chart_data_r <- reactive({
+    gei_data %>%
+      select(Year,
+             Country,
+             gei_full_indicators %>% 
+               filter(Id == "GEI" | `Parent Id` == "GEI") %>% 
+               select("Indicator (s)") %>%
+               unlist(use.names = FALSE)) %>%
+      filter(Country == input$country_country) %>%
+      gather("Indicator", "Score", 3:ncol(.)) %>%
+      arrange_at(c("Year", "Indicator"))
+  })
+  
+  # Reactive expression for the selected domain data for EU-28
+  # It returns the GEI or domain value for the EU-28 and the picked year 
+  eu_domain_data_r <- reactive({
+      gei_data %>%
+        select(Year, Country, Score = country_domain_r()) %>%
+        filter(Year == input$country_year) %>%
+        filter(Country == "European Union 28")
+  })
+  
+  # Reactive expression for the selected domain data used in the country
+  # explorer
+  # It returns the GEI or domain value along with its ranking for the picked
+  # country and year 
+  country_domain_data_r <- reactive({
+    if (input$country_country != "European Union 28") {
+      gei_data %>%
+        select(Year, Country, Score = country_domain_r()) %>%
+        filter(Year == input$country_year) %>%
+        filter(Country != "European Union 28") %>%
+        mutate(Rank = rank(-Score, ties.method = "min")) %>%
+        filter(Country == input$country_country)
+    } else {
+      eu_domain_data_r()
+    }
+  })
+  
+  # Reactive expression for the country trend data used in the table
+  # It returns each year score and the variatons vs. the previous year and vs.
+  # the first edition (2013).
+  # When GEI is selected, it returns GEI and domains data. If a domain is
+  # selected, it returns that domain and its subdomains and indicators.
+  country_trend_table_data_r <- reactive({
+    if (country_domain_r() == "Gender Equality Index") {
+      gei_data %>%
+        filter(Country == input$country_country) %>%
+        select(Year,
+               gei_full_indicators %>% 
+                 filter(Id == "GEI" | `Parent Id` == "GEI") %>% 
+                 select("Indicator (s)") %>%
+                 unlist(use.names = FALSE)) %>%
+        `rownames<-`(.[,1]) %>%
+        select(-Year) %>%
+        t() %>%
+        as.data.frame() %>%
+        tibble::rownames_to_column("Indicator")
+    }
+  })
+
+    
+  ##------------- Event observers -------------##
+  
+  # It sets the selected domain to the one clicked in the trend chart
+  observeEvent(input$country_clicked_domain, {
+    country_domain_r(input$country_clicked_domain)
+  })
+  
+  
+  ##----------------- Outputs -----------------##
+  
+  output$country_html_name <- renderUI({
+    value <- input$country_country
+    div(
+      class = "flagged_country",
+      img(class = "flag", alt = paste(value, "flag"),
+          src = sprintf("images/flags/%s.png", value)),
+      div(class = "country_name", value),
+    )
+  })
+  
+  output$country_trend_chart <- renderHighchart({
+    data <- country_trend_chart_data_r()
+    highchart() %>%
+      hc_chart(type = 'line', marginLeft = "50") %>%
+      hc_add_series(data, type="line", name = unique(data$Indicator),
+                    hcaes(x = Year, y = Score, group = Indicator),
+                    lineWidth = 1, marker = list(radius = 2),
+                    showInLegend = FALSE) %>%
+      hc_colors(c(gei_color, health_color, knowledge_color, money_color,
+                  power_color, time_color, work_color)) %>%
+      hc_xAxis(title = list(text = "Year"), allowDecimals = FALSE,
+               tickPositions = gei_years) %>%
+      hc_yAxis(title = list(text = "Score"), maxPadding = 0.005) %>%
+      hc_pane(size = "100%") %>%
+      hc_plotOptions(
+        series = list(
+          events = list(
+            click = JS("function(event) {
+              Shiny.onInputChange('country_clicked_domain',
+                                  [event.point.series.name])
+            }")))) %>%
+      hc_credits(enabled = TRUE,
+                 text = "*Click on lines to explore domains",
+                 href = "",
+                 position = list(x = 0, align = "left"),
+                 style = list(cursor = "default"))%>%
+      hc_add_theme(my_hc_theme)
+  })
+  
+  output$country_domain_html_title <- renderUI({
+    domain <- country_domain_r()
+    year <- input$country_year
+    HTML(sprintf(
+      paste0("<text id = 'domain_html_title' style = 'color:%s'>
+               <tspan>%s</tspan>
+             </text>",
+             "<text id = 'year_html_subtitle'>
+               <tspan>%s</tspan>
+             </text>"),
+      ifelse(
+        country_domain_r() == "Gender Equality Index",
+        gei_color,
+        domain_color_mapping[country_domain_r()]
+      ),
+      domain,
+      year
+    ))
+  })
+  
+  output$country_domain_chart <- renderHighchart({
+    data <- country_domain_data_r()$Score
+    name <- country_domain_data_r()$Country
+    highchart() %>%
+      hc_chart(type = "solidgauge") %>%
+      hc_add_series(data, name = name, showInLegend = FALSE) %>%
+      hc_yAxis(min = 0, max = 100, tickWidth = 0, minorTicks = FALSE,
+               labels = list(enabled = FALSE)) %>%
+      hc_pane(size = "100%",
+              background = list(outerRadius = "100%", innerRadius = "75%",
+                                shape = "arc")) %>%
+      hc_plotOptions(
+        solidgauge = list(
+          innerRadius = "75%",
+          dataLabels = list(y = -15, borderWidth = 0, useHTML = TRUE,
+                            style = list(fontSize = "18px", 
+                                         color = my_pal(data))))) %>%
+      hc_colors(gei_domain_color_mapping[[country_domain_r()]]) %>%
+      hc_tooltip(outside = TRUE) %>%
+      hc_add_theme(my_hc_theme)
+  })
+  
+  output$country_domain_ranking_text = renderText ({
+    if (input$country_country != "European Union 28") {
+      paste("Ranking:", country_domain_data_r()$Rank)
+    } else {
+      ""
+    }
+  })
+  
+  output$country_domain_html_detail = renderUI ({
+    # Gather all the necessary data
+    year <- input$country_year
+    country <- input$country_country
+    is_country <- input$country_country != "European Union 28"
+    domain_score <- country_domain_data_r()$Score
+    if (is_country) {
+      domain_ranking <- country_domain_data_r()$Rank
+    }
+    eu_score <- eu_domain_data_r()$Score
+    eu_difference <- domain_score - eu_score
+    
+    # Build the detail
+    div(
+      id = "country_domain_detail",
+      HTML(
+        paste0(
+          sprintf("In the %s edition, %s<b>%s</b> scores %s points",
+                  year,
+                  ifelse(is_country, "", "the "),
+                  ifelse(is_country, country, "European Union"),
+                  domain_score),
+          ifelse(is_country,
+                 sprintf(
+                   paste0(" and ranks in the %s position in the EU-28.",
+                          " It's %s points %s the EU's score."),
+                   domain_ranking,
+                   abs(round(eu_difference, 2)),
+                   ifelse(eu_difference >= 0, "above", "below")
+                 ),
+                 "."
+          )
+        )
+      )
+    )
+  })
+  
+  output$country_trend_table <- renderReactable({
+    data <- country_trend_table_data_r()
+    print(data)
+    reactable(data)
+  })
+  
+  
   
   ###=========== Country Comparator ===========###
+  
+  ##------------- Reactive values -------------##
+  
+  # Reactive value for the selected subdomain in the comparator tab
+  comp_subdomain_r <- reactiveVal(NULL)
 
+  
   ##----------- Reactive expressions -----------##
   
   # Reactive expression for the first country-year pair selected
@@ -749,6 +911,13 @@ function(input, output, session) {
       tibble::rownames_to_column("Indicator")
   })
   
+  # Reactive expression for comparison GEI charts data
+  # It returns GEI values for the two selected country-year pairs
+  comp_gei_chart_data_r <- reactive({
+    comp_chart_data_r() %>%
+      filter(Indicator == "Gender Equality Index")
+  })
+  
   # Reactive expression for the data used in the comparison polar chart
   # It returns domains values for the two selected country-year pairs
   comp_domains_chart_data_r <- reactive({
@@ -756,18 +925,11 @@ function(input, output, session) {
       filter(Indicator %in% (gei_full_indicators %>% 
                                filter(`Parent Id` == "GEI") %>% 
                                select("Indicator (s)") %>%
-                               unlist(use.names=FALSE)))
-  })
-  
-  # Reactive expression for comparison GEI charts data
-  # It returns GEI values for the two selected country-year pairs
-  comp_GEI_chart_data_r <- reactive({
-    comp_chart_data_r() %>%
-      filter(Indicator == "Gender Equality Index")
+                               unlist(use.names = FALSE)))
   })
   
   # Reactive expression for comparison domain charts data
-  # It returns GEI values for the two selected country-year pairs
+  # It returns picked domain values for the two selected country-year pairs
   comp_domain_chart_data_r <- reactive({
     indicator_id <- gei_full_indicators %>%
       filter(`Indicator (s)` == input$comp_domain) %>%
@@ -778,7 +940,8 @@ function(input, output, session) {
   })
   
   # Reactive expression for the data used in the comparison bar chart
-  # It returns subdomains values for the two selected country-year pairs
+  # It returns picked domain subdomains values for the two selected country-year
+  # pairs
   comp_subdomains_chart_data_r <- reactive({
     indicator_id <- gei_full_indicators %>%
       filter(`Indicator (s)` == input$comp_domain) %>%
@@ -788,15 +951,68 @@ function(input, output, session) {
       filter(Indicator %in% (gei_full_indicators %>% 
                                filter(`Parent Id` == indicator_id) %>% 
                                select("Indicator (s)") %>%
-                               unlist(use.names=FALSE)))
+                               unlist(use.names = FALSE)))
   })
+  
+  # Reactive expression for comparison subdomain charts data
+  # It returns picked subdomain values for the two selected country-year pairs
+  comp_subdomain_chart_data_r <- reactive({
+    indicator_id <- gei_full_indicators %>%
+      filter(`Indicator (s)` == comp_subdomain_r()) %>%
+      pull(`Indicator (s)`)
+    
+    comp_chart_data_r() %>%
+      filter(Indicator == indicator_id)
+  })
+  
+  # Reactive expression for comparison indicators table data
+  # It returns picked subdomain indicators values and the difference between 
+  # them for the two selected country-year pairs
+  comp_indicators_table_data_r <- reactive({
+    indicator_id <- gei_full_indicators %>%
+      filter(`Indicator (s)` == comp_subdomain_r()) %>%
+      pull(Id)
+    
+    comp_chart_data_r() %>%
+      filter(Indicator %in% (gei_full_indicators %>% 
+                               filter(`Parent Id` == indicator_id) %>% 
+                               select("Indicator (s)") %>%
+                               unlist(use.names = FALSE))) %>%
+      mutate(Difference = (!!as.name(first_data_name_r()) - 
+                             !!as.name(second_data_name_r()))) %>%
+      relocate(Indicator, first_data_name_r(), Difference, second_data_name_r())
+  })
+  
+  
+  ##------------- Event observers -------------##
+  
+  observeEvent(input$comp_domain, {
+    # It sets the first subdomain as the selected one when a new domain is
+    # picked 
+    comp_subdomain_r((comp_subdomains_chart_data_r() %>%
+                        pull(Indicator))[1])
+    
+    # It adapts the color of the domain comparator container taking into account
+    # the selected domain
+    runjs(paste0(
+      '$("#domain_comparator_container .box").css("border-color", "',
+      domain_color_mapping[input$comp_domain]
+      ,'");'
+    ))
+  })
+  
+  # It sets the selected subdomain to the one clicked in the bar chart
+  observeEvent(input$comp_clicked_subdomain, {
+    comp_subdomain_r(input$comp_clicked_subdomain)
+  })
+  
   
   ##----------------- Outputs -----------------##
   
-  output$compDomainsChart <- renderHighchart({
+  output$comp_domains_chart <- renderHighchart({
     data <- comp_domains_chart_data_r()
-    gei_difference <- comp_GEI_chart_data_r()[[first_data_name_r()]] -
-      comp_GEI_chart_data_r()[[second_data_name_r()]]
+    gei_difference <- comp_gei_chart_data_r()[[first_data_name_r()]] -
+      comp_gei_chart_data_r()[[second_data_name_r()]]
     
     highchart() %>%
       hc_chart(type = "area", polar = TRUE, backgroundColor = "transparent") %>%
@@ -810,13 +1026,9 @@ function(input, output, session) {
                style = list(color = gei_color,
                             fontSize = "16px",
                             fontWeight = "bold")) %>%
-      hc_subtitle(text = paste0(ifelse(gei_difference > 0,
-                                       "<span>&#8593;</span> ",
-                                       ""),
-                                abs(round(gei_difference,2)),
-                                ifelse(gei_difference < 0,
-                                       " <span>&#8593;</span>",
-                                       "")),
+      hc_subtitle(text = paste0(ifelse(gei_difference > 0, "\u2191 ", ""),
+                                abs(round(gei_difference, 2)),
+                                ifelse(gei_difference < 0, " \u2191", "")),
                   useHTML = TRUE,
                   style = list(color = ifelse(gei_difference > 0,
                                               first_country_color,
@@ -826,43 +1038,70 @@ function(input, output, session) {
       hc_xAxis(categories = data$Indicator) %>%
       hc_yAxis(min = 0, max = 100, tickAmount = 5, showLastLabel = TRUE,
                labels = list(style = list(fontSize = "10px"))) %>%
+      hc_tooltip(outside = TRUE) %>%
+      hc_responsive(
+        rules = list(
+          list(
+            condition = list(maxWidth  = 220),
+            chartOptions = list(xAxis = list(
+              labels = list(
+                distance = 10,
+                formatter = JS("function () {
+                  return this.value.toString().charAt(0)
+                }")
+              )
+            ))
+          ),
+          list(
+            condition = list(minWidth  = 220),
+            chartOptions = list(xAxis = list(
+              labels = list(
+                distance = 15,
+                formatter = JS("function () {
+                  return this.value
+                }")
+              )
+            ))
+          )
+        )
+      ) %>%
       hc_add_theme(my_hc_theme)
   })
   
-  output$firstGEIChart <- renderHighchart({
-    data <- comp_GEI_chart_data_r()[[first_data_name_r()]]
-    star <- data > comp_GEI_chart_data_r()[[second_data_name_r()]]
+  output$first_gei_chart <- renderHighchart({
+    data <- comp_gei_chart_data_r()[[first_data_name_r()]]
+    star <- data > comp_gei_chart_data_r()[[second_data_name_r()]]
     create_indicator_gauge(data, first_data_name_r(), first_country_color,
-                           star, "16px")
+                           star, "16px", -15)
   })
   
-  output$secondGEIChart <- renderHighchart({
-    data <- comp_GEI_chart_data_r()[[second_data_name_r()]]
-    star <- data > comp_GEI_chart_data_r()[[first_data_name_r()]]
+  output$second_gei_chart <- renderHighchart({
+    data <- comp_gei_chart_data_r()[[second_data_name_r()]]
+    star <- data > comp_gei_chart_data_r()[[first_data_name_r()]]
     create_indicator_gauge(data, second_data_name_r(), second_country_color,
-                           star, "16px")
+                           star, "16px", -15)
   })
   
-  output$firstDomainChart <- renderHighchart({
+  output$first_domain_chart <- renderHighchart({
     data <- comp_domain_chart_data_r()[[first_data_name_r()]]
     star <- data > comp_domain_chart_data_r()[[second_data_name_r()]]
     create_indicator_gauge(data, first_data_name_r(), first_country_color,
-                           star, "14px")
+                           star, "14px", -15)
   })
   
-  output$secondDomainChart <- renderHighchart({
+  output$second_domain_chart <- renderHighchart({
     data <- comp_domain_chart_data_r()[[second_data_name_r()]]
     star <- data > comp_domain_chart_data_r()[[first_data_name_r()]]
     create_indicator_gauge(data, second_data_name_r(), second_country_color,
-                           star, "14px")
+                           star, "14px", -15)
   })
   
-  output$domainDiffHtmlValue <- renderUI({
+  output$domain_diff_html_value <- renderUI({
     difference <- comp_domain_chart_data_r()[[first_data_name_r()]] -
       comp_domain_chart_data_r()[[second_data_name_r()]]
-    value <- paste0(ifelse(difference > 0, "<span>&#8593;</span> ", ""),
-                    abs(round(difference,2)),
-                    ifelse(difference < 0, " <span>&#8593;</span>", ""))
+    value <- paste0(ifelse(difference > 0, "\u2191 ", ""),
+                    abs(round(difference, 2)),
+                    ifelse(difference < 0, " \u2191", ""))
     div(HTML(sprintf("<text style='color:%s'> %s </text>",
                      ifelse(difference > 0,
                             first_country_color, 
@@ -870,10 +1109,10 @@ function(input, output, session) {
                      , value)))
   })
   
-  output$compSubdomainsChart <- renderHighchart({
+  output$comp_subdomains_chart <- renderHighchart({
     data <- comp_subdomains_chart_data_r()
     highchart() %>%
-      hc_chart(marginLeft = "100", backgroundColor = "transparent") %>%
+      hc_chart(marginLeft = "90", backgroundColor = "transparent") %>%
       hc_add_series(data[[first_data_name_r()]], type="bar",
                     name = first_data_name_r(),
                     color = first_country_color, fillOpacity = 0.4,
@@ -887,14 +1126,130 @@ function(input, output, session) {
       } else {
         data$Indicator
       },
-      labels = list(style = list(textOverflow = "none",
-                                 fontSize = "10px"))) %>%
+      labels = list(style = list(fontSize = "10px",
+                                 textOverflow = "none"))) %>%
       hc_yAxis(min = 0, max = 100, tickAmount = 5, showLastLabel = TRUE) %>%
+      hc_plotOptions(series = list(events = list(
+        click = JS("function(event) {
+          Shiny.onInputChange('comp_clicked_subdomain', [event.point.category])
+        }")
+      ))) %>%
+      hc_credits(enabled = TRUE,
+                 text = "*Click on bars to change subdomain",
+                 href = "",
+                 position = list(x = 0, align = "left"),
+                 style = list(cursor = "default"))%>%
       hc_add_theme(my_hc_theme)
   })
   
+  output$subdomain_html_name <- renderUI({
+    domain <- comp_subdomain_r()
+    div(HTML(sprintf("<text style='color:%s'> %s </text>",
+                     domain_color_mapping[input$comp_domain],
+                     domain)))
+  })
   
-
+  output$first_subdomain_chart <- renderHighchart({
+    data <- comp_subdomain_chart_data_r()[[first_data_name_r()]]
+    star <- data > comp_subdomain_chart_data_r()[[second_data_name_r()]]
+    create_indicator_gauge(data, first_data_name_r(), first_country_color,
+                           star, "12px", -12)
+  })
+  
+  output$second_subdomain_chart <- renderHighchart({
+    data <- comp_subdomain_chart_data_r()[[second_data_name_r()]]
+    star <- data > comp_subdomain_chart_data_r()[[first_data_name_r()]]
+    create_indicator_gauge(data, second_data_name_r(), second_country_color,
+                           star, "12px", -12)
+  })
+  
+  output$subdomain_diff_html_value <- renderUI({
+    difference <- comp_subdomain_chart_data_r()[[first_data_name_r()]] -
+      comp_subdomain_chart_data_r()[[second_data_name_r()]]
+    value <- paste0(ifelse(difference > 0, "\u2191 ", ""),
+                    abs(round(difference, 2)),
+                    ifelse(difference < 0, " \u2191", ""))
+    div(HTML(sprintf("<text style='color:%s'> %s </text>",
+                     ifelse(difference > 0,
+                            first_country_color, 
+                            second_country_color)
+                     , value)))
+  })
+  
+  output$comp_indicators_table <- renderReactable({
+    # Define data
+    data <- comp_indicators_table_data_r()
+    
+    # Define column styles
+    col_names <- data %>% colnames()
+    indicator_col_def <- list(colDef(
+      align = "left",
+      style = list(position = "sticky", zIndex = 1, left = 0,
+                   color = rgb(102, 102, 102, maxColorValue = 255),
+                   background = "white"),
+      headerStyle = list(position = "sticky", zIndex = 1, left = 0,
+                         background = "white")
+    )) %>%
+      `names<-`("Indicator")
+    first_data_col_def <- list(colDef(
+      cell = function(value, index) {
+        div(class = "comp_indicators_table_score",
+            style = list(borderColor = first_country_color),
+            ifelse(data$Difference[index] > 0,
+                   paste0(value, " \u002A"),
+                   value))
+      },
+      align = "center",
+      width = 60,
+      style = function(value) {
+        list(alignSelf = "center", color = my_pal(value))
+      }
+    )) %>%
+      `names<-`(first_data_name_r())
+    difference_col_def <- list(colDef(
+      cell = function(value) {
+        div(paste0(ifelse(value > 0, "\u2191 ", ""),
+                   abs(round(value, 2)),
+                   ifelse(value < 0, " \u2191", "")))
+      },
+      align = "center",
+      html = TRUE,
+      width = 60,
+      style = function(value) {
+        list(alignSelf = "center", color = ifelse(value > 0,
+                                                  first_country_color, 
+                                                  second_country_color))
+      }
+    )) %>%
+      `names<-`("Difference")
+    second_data_col_def <- list(colDef(
+      cell = function(value, index) {
+        div(class = "comp_indicators_table_score",
+            style = list(borderColor = second_country_color),
+            ifelse(data$Difference[index] < 0,
+                   paste0(value, " \u002A"),
+                   value))
+      },
+      align = "center",
+      width = 60,
+      style = function(value) {
+        list(alignSelf = "center", color = my_pal(value))
+      }
+    )) %>%
+      `names<-`(second_data_name_r())
+    col_defs <- c(indicator_col_def, first_data_col_def, difference_col_def,
+                  second_data_col_def)
+    
+    # Create table
+    reactable(data,
+              columns = col_defs,
+              style = list(
+                fontSize = 12
+              ))
+  })
+  
+  
+  
   ###============= Data Explorer =============###
   
   ##----------- Reactive expressions -----------##
@@ -913,7 +1268,7 @@ function(input, output, session) {
   # It disables download button when there is no data
   observe({
     shinyjs::toggleState(
-      id = "downloadData",
+      id = "download_data",
       condition = !(input$data_tabset_panel == "Data table" &&
                       nrow(data_table_r()) == 0)
     )
@@ -922,7 +1277,7 @@ function(input, output, session) {
 
   ##----------------- Outputs -----------------##
   
-  output$downloadData <- downloadHandler(
+  output$download_data <- downloadHandler(
     filename = function() {
       extension <- ifelse (input$download_type == "CSV", "csv", "xlsx")
       
@@ -937,7 +1292,7 @@ function(input, output, session) {
         data <- gei_metadata
       }
       
-      if (input$Download_type == "CSV")  {
+      if (input$download_type == "CSV")  {
         write.csv2(data, file, row.names = FALSE)
       } else {
         write.xlsx(as.data.frame(data), file, row.names = FALSE)
@@ -945,27 +1300,26 @@ function(input, output, session) {
     }
   )
   
-  output$dataTable <- renderReactable({
+  output$data_table <- renderReactable({
     col_defs <- list(
       Year = colDef(
         width = 60,
-        style = list(position = "sticky", left = 0, background = "white",
-                     zIndex = 1),
-        headerStyle = list(position = "sticky", left = 0, background = "white",
-                           zIndex = 1)
+        style = list(position = "sticky", zIndex = 1, left = 0,
+                     background = "white"),
+        headerStyle = list(position = "sticky", zIndex = 1, left = 0,
+                           background = "white")
       ),
       "Country code" = colDef(show = FALSE),
       Country = colDef(
         width = 120,
-        style = list(position = "sticky", left = "60px", background = "white",
-                     zIndex = 1),
-        headerStyle = list(position = "sticky", left = "60px",
-                           background = "white", zIndex = 1)
+        style = list(position = "sticky", zIndex = 1, left = "60px",
+                     background = "white"),
+        headerStyle = list(position = "sticky", zIndex = 1, left = "60px",
+                           background = "white")
       )
     )
     reactable(data_table_r(),
               showSortable = TRUE,
-              #pagination = FALSE,
               defaultColDef = colDef(
                 minWidth = 180
               ),
@@ -976,7 +1330,7 @@ function(input, output, session) {
     )
   })
   
-  output$metadataTable <- renderReactable({
+  output$metadata_table <- renderReactable({
     col_defs <- list(
       Domain = colDef(
         width = 80

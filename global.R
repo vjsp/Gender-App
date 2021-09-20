@@ -1,22 +1,22 @@
 ################### global.R ###################
+# @author Víctor Julio Sánchez Pollo           #
+# @version 18/09/2021                          #
+################################################
 
 ###=============== Libraries ===============###
 
-# Define used repositories
+# Used repositories
 default_repos = "http://cran.us.r-project.org"
-# Install and load necessary libraries
+# Libraries installation and loading
 if(!require(data.table)) install.packages("data.table", repos = default_repos)
 if(!require(dplyr)) install.packages("dplyr", repos = default_repos)
-if(!require(DT)) install.packages("DT", repos = default_repos)
 if(!require(formattable)) install.packages("formattable",repos = default_repos)
 if(!require(geojsonio)) install.packages("geojsonio", repos = default_repos)
 if(!require(highcharter)) install.packages("highcharter", repos = default_repos)
 if(!require(leaflet)) install.packages("leaflet", repos = defualt_repos)
 if(!require(magrittr)) install.packages("magrittr", repos = default_repos)
 if(!require(openxlsx)) install.packages("openxlsx", repos = default_repos)
-if(!require(radarchart)) install.packages("radarchart", repos = default_repos)
 if(!require(reactable)) install.packages("reactable", repos = default_repos)
-if(!require(readxl)) install.packages("readxl", repos = default_repos)
 if(!require(shiny)) install.packages("shiny", repos = default_repos)
 if(!require(shinydashboard)) install.packages("shinydashboard", repos = default_repos)
 if(!require(shinyjs)) install.packages("shinyjs", repos = default_repos)
@@ -35,22 +35,22 @@ gei_full_indicators <- readRDS(file = "data/GEI_indicators.rds")
 
 ###========== Modified data frames ==========###
 
-# Exclude the gender detail metrics from indicators dataframe
+# GEI indicators without the gender detail metrics
 gei_indicators <- gei_full_indicators %>% filter(Type != "Metric")
 
-# Round all data to 2 decimals
+# GEI data with all data rounded out to 2 decimals
 gei_data <- gei_data %>% mutate_if(is.numeric, round, digits=2)
 
 
 ###====== Variables and initial values ======###
 
-# Set a vector with the available years
+# Vector with the available years
 gei_years <- sort(unique(gei_data$Year))
 
-# Set the current (latest) year
+# Current (latest) year
 current_year <- max(gei_years)
 
-# Set the default range to the full range
+# Default year range (it is defined to the full range)
 default_year_range <- c(min(gei_years), max(gei_years))
 
 
@@ -61,13 +61,21 @@ first_country_color <- rgb(0, 74, 153, maxColorValue = 255);
 second_country_color <- rgb(206, 153, 0, maxColorValue = 255);
 default_green <- rgb(46, 182, 44, maxColorValue = 255)
 default_red <- rgb(220, 28, 19, maxColorValue = 255)
+work_color <- rgb(52, 150, 176, maxColorValue = 255)
+money_color <- rgb(230, 160, 0, maxColorValue = 255)
+knowledge_color <- rgb(91, 155, 105, maxColorValue = 255)
+time_color <- rgb(225, 108, 66, maxColorValue = 255)
+power_color <- rgb(232, 83, 79, maxColorValue = 255)
+health_color <- rgb(190, 117, 148, maxColorValue = 255)
 
-# Define scores color palette taking into account all possible values (0-100)
+# Scores color palette
+# It takes into account all possible values (0-100)
 my_pal <- colorNumeric(palette = "viridis",
                        domain = c(0,100),
                        na.color = "transparent")
 
-# Define trend (growth) color palette taking into account different ranges
+# Trend (growth) color palette
+# It takes into account different ranges for positive and negative values
 trend_pal <- function(value = NA) {
   # Define color values
   high_green <- rgb(46, 182, 44, maxColorValue = 255)
@@ -102,10 +110,22 @@ trend_pal <- function(value = NA) {
   )
 }
 
+# Domain color mapping
+domain_color_mapping <- list("WORK" = work_color,
+                             "MONEY" = money_color,
+                             "KNOWLEDGE" = knowledge_color,
+                             "TIME" = time_color,
+                             "POWER" = power_color,
+                             "HEALTH" = health_color)
+
+# GEI-Domain color mapping (include both, GEI and domains)
+gei_domain_color_mapping <- c("Gender Equality Index" = gei_color,
+                              domain_color_mapping)
+
 
 ###=========== Highcharter themes ===========###
 
-# Set highcharter theme to change the font
+# Highcharter theme used to change the default font
 my_hc_theme <- hc_theme(
   chart = list(
     style = list(fontFamily = "Source Sans Pro")
@@ -135,25 +155,6 @@ format_color_formattable <- function (...) {
   formatter("span", style = function(x) {
     style(color = my_pal(x))
   })
-}
-
-# Function to use the color palette with reactable
-# @value - The value (number) to be styled
-# @return A list using the color palette to style the text
-format_trend_reactable <- function (value) {
-  list(colDef(
-    cell = function(value) {
-      if (value >= 0) paste0("+", value) else value
-    },
-    style = function(value) {
-      color <- if (value > 0) {
-        "#008000"
-      } else if (value < 0) {
-        "#e00000"
-      }
-      list(fontWeight = 600, color = color)
-    }
-  ))
 }
 
 # Function to round up a number taking into account the number of digits
@@ -234,8 +235,9 @@ create_gender_gauge <- function(data, max_value, title, color) {
 # @param color - The color used to fill the chart
 # @param star - Boolean that indicates if a star must be shown next to the value
 # @param value_size - A valid font-size for the value label
+# @param y_label - The y position offset of the label in pixels
 # @return A gauge chart
-create_indicator_gauge <- function(data, name, color, star, value_size) {
+create_indicator_gauge <- function(data, name, color, star, value_size, y_label) {
   highchart() %>%
     hc_chart(type = "solidgauge", backgroundColor = "transparent") %>%
     hc_add_series(data, name = name, showInLegend = FALSE) %>%
@@ -246,15 +248,16 @@ create_indicator_gauge <- function(data, name, color, star, value_size) {
                               shape = "arc")) %>%
     hc_plotOptions(solidgauge = list(
       innerRadius = "75%",
-      dataLabels = list(y = -15, borderWidth = 0, useHTML = TRUE,
+      dataLabels = list(y = y_label, borderWidth = 0, useHTML = TRUE,
                         format =  paste0("{point.y}",
                                          ifelse(star,
-                                                " <span>&#42;</span>",
+                                                " \u002A",
                                                 "")),
                         style = list(fontSize = value_size,
                                      color = my_pal(data)))
     )) %>%
     hc_colors(color = color) %>%
+    hc_tooltip(outside = TRUE) %>%
     hc_add_theme(my_hc_theme)
 }
 
@@ -265,28 +268,28 @@ create_indicator_gauge <- function(data, name, color, star, value_size) {
 set_selector_style <- function(input_object, indicator_panel_id) {
   if (input_object == 'GEI') {
     runjs(paste0('$("',indicator_panel_id, ' .selectize-input").
-        addClass("GEI_option")'))
+        addClass("gei_option")'))
     runjs(paste0('$("',indicator_panel_id, ' .selectize-input").
-        removeClass("Domain_option Subdomain_option Indicator_option")'))
+        removeClass("domain_option subdomain_option indicator_option")'))
   } else if (substr(input_object,1,1) == 'D'){
     runjs(paste0('$("',indicator_panel_id, ' .selectize-input").
-        addClass("Domain_option")'))
+        addClass("domain_option")'))
     runjs(paste0('$("',indicator_panel_id, ' .selectize-input").
-        removeClass("GEI_option Subdomain_option Indicator_option")'))
+        removeClass("gei_option subdomain_option indicator_option")'))
   } else if (substr(input_object,1,1) == 'S'){
     runjs(paste0('$("',indicator_panel_id, ' .selectize-input").
-        addClass("Subdomain_option")'))
+        addClass("subdomain_option")'))
     runjs(paste0('$("',indicator_panel_id, ' .selectize-input").
-        removeClass("GEI_option Domain_option Indicator_option")'))
+        removeClass("gei_option domain_option indicator_option")'))
   } else if (substr(input_object,1,1) == 'I'){
     runjs(paste0('$("',indicator_panel_id, ' .selectize-input").
-        addClass("Indicator_option")'))
+        addClass("indicator_option")'))
     runjs(paste0('$("',indicator_panel_id, ' .selectize-input").
-        removeClass("GEI_option Domain_option Subdomain_option")'))
+        removeClass("gei_option domain_option subdomain_option")'))
   } else {
     runjs(paste0('$("',indicator_panel_id, ' .selectize-input").
         removeClass(
-          "GEI_option Domain_option Subdomain_option Indicator_option"
+          "gei_option domain_option subdomain_option indicator_option"
         )'))
   }
 }

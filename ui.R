@@ -1,9 +1,12 @@
 ##################### ui.R #####################
+# @author Víctor Julio Sánchez Pollo           #
+# @version 18/09/2021                          #
+################################################
 
 dashboardPage(
   dashboardHeader(title = "Gender Equality App",
-                  dropdownMenuOutput("infoMenu"),
-                  dropdownMenuOutput("creditsMenu")),
+                  dropdownMenuOutput("info_menu"),
+                  dropdownMenuOutput("credits_menu")),
   dashboardSidebar(
     sidebarMenu(id = "sidebar_menu",
       menuItem("Map Explorer", tabName = "map", icon = icon("globe")),
@@ -35,6 +38,20 @@ dashboardPage(
         )
       ),
       menuItem("Country Explorer", tabName = "country", icon = icon("flag")),
+      conditionalPanel("input.sidebar_menu == 'country'",
+        class = "sidebar_conditional_panel",
+        sliderTextInput("country_year",
+          label = h5("Select year"),
+          choices = gei_years,
+          selected = current_year,
+          animate = FALSE
+        ),
+        pickerInput("country_country",
+          label = h5("Select country"), 
+          choices = unique(levels(gei_data$Country)),
+          selected = c("Spain"),
+        )
+      ),
       menuItem("Country Comparator", tabName = "comparator",
                icon = icon("balance-scale")),
       menuItem("Data Explorer", tabName = "data", icon = icon("folder-open")),
@@ -63,10 +80,10 @@ dashboardPage(
         id = "legend_container",
         box(
           width = 12, title = "Legend", solidHeader = TRUE,
-          p(class = "GEI_option", "Gender Equality Index"),
-          p(class = "Domain_option", "Domain"),
-          p(class = "Subdomain_option", "Subdomain"),
-          p(class = "Indicator_option", "Indicator")
+          p(class = "gei_option", "Gender Equality Index"),
+          p(class = "domain_option", "Domain"),
+          p(class = "subdomain_option", "Subdomain"),
+          p(class = "indicator_option", "Indicator")
         )
       )
     )
@@ -81,7 +98,7 @@ dashboardPage(
       # Map Explorer content
       tabItem(tabName = "map",
         div(id = "map_outer", class = "outer", height = "100%",
-          leafletOutput("myMap"),
+          leafletOutput("my_map"),
           absolutePanel(id = "map_indicator_panel",
             draggable = TRUE,
             selectInput(inputId = "indicator",
@@ -93,47 +110,46 @@ dashboardPage(
             )
           ),
           absolutePanel(id = "map_graphs",
-            width = "30%",
             top = 100,
             right = 0,
+            width = "30%",
             draggable = TRUE,
             div(id = "eu_value_container",
               actionButton("eu_button", "", icon = icon("globe-europe")),
-              htmlOutput("euHtmlValue")
+              htmlOutput("eu_html_value")
             ),
             div(id = "ranking_container",
               column(class = "ranking", width = 6,
                 div(class = "rank_title", "Top 3"),
-                formattableOutput("top3Table")
+                formattableOutput("top_3_table")
               ),
               column(class = "ranking", width = 6,
                 div(class = "rank_title", "Bottom 3"),
-                formattableOutput("bottom3Table")
+                formattableOutput("bottom_3_table")
               )
             ),
             conditionalPanel(condition = "input.indicator == 'GEI'",
               class = "conditional_panel",
-              highchartOutput("domainsChart", height = "230")
-              # chartJSRadarOutput("radarPlot", height = "250")
+              highchartOutput("domains_chart", height = "230")
             ),
             conditionalPanel(condition = "input.indicator.startsWith('D')",
               class = "conditional_panel",
-              highchartOutput("subdomainsChart", height = "230")
+              highchartOutput("subdomains_chart", height = "230")
             ),
             conditionalPanel(condition = "input.indicator.startsWith('S')",
               class = "conditional_panel",
-              highchartOutput("indicatorsChart", height = "230")
+              highchartOutput("indicators_chart", height = "230")
             ),
             conditionalPanel(condition = "input.indicator.startsWith('I')",
               id = "metric_container", class = "conditional_panel",
               div(id = "metrics_charts", width = 12, height = "230",
                 div(id = "country_value_container",
-                    htmlOutput("countryHtmlValue")
+                    htmlOutput("country_html_value")
                 ),
                 div(id = "metrics_charts_container",
-                  highchartOutput("totalChart", height = "180"),
-                  highchartOutput("womenChart", height = "180"),
-                  highchartOutput("menChart", height = "180")
+                  highchartOutput("total_chart", height = "180"),
+                  highchartOutput("women_chart", height = "180"),
+                  highchartOutput("men_chart", height = "180")
                 )
               )
             )
@@ -157,10 +173,33 @@ dashboardPage(
           ),
           fluidRow(id = "trend_tabs_row", class = "tabs_row",
             tabsetPanel(id = "trend_tabset_panel",
-              tabPanel("Trend graph",  highchartOutput("trendChart")),
-              tabPanel("Scores table", reactableOutput("trendScoreTable")),
-              tabPanel("Variations table", reactableOutput("trendVarTable"))
+              tabPanel("Trend graph",  highchartOutput("trend_chart")),
+              tabPanel("Scores table", reactableOutput("trend_score_table")),
+              tabPanel("Variations table", reactableOutput("trend_var_table"))
             )
+          )
+        )
+      ),
+      # Country Explorer content
+      tabItem(tabName = "country",
+        box(id = "country_explorer_box_container",
+          width = 12,
+          fluidRow(
+            column(width = 4,
+              htmlOutput("country_html_name"),
+              highchartOutput("country_trend_chart", height = 180)
+            ),
+            column(width = 4,
+              htmlOutput("country_domain_html_title"),
+              highchartOutput("country_domain_chart", height = 120),
+              textOutput("country_domain_ranking_text")
+            ),
+            column(width = 4,
+              htmlOutput("country_domain_html_detail"),
+            )
+          ),
+          fluidRow(
+            reactableOutput("country_trend_table")
           )
         )
       ),
@@ -169,9 +208,9 @@ dashboardPage(
         fluidRow(id = "gei_comparator_container",
           box(width = 12,
             column(id = "first_country_panel",
-                   class = "country_comparator_panel",
-                   width = 4,
-              highchartOutput("firstGEIChart", height = "120"),
+              class = "country_comparator_panel",
+              width = 4,
+              highchartOutput("first_gei_chart", height = 120),
               selectInput(inputId = "comp_first_country",
                 label = NULL,
                 choices = unique(levels(gei_data$Country)),
@@ -184,13 +223,13 @@ dashboardPage(
               ),
               height = 250
             ),
-            column(width = 4,
-              highchartOutput("compDomainsChart", height = 250)
+            column(width = 4, minWidth = 220,
+              highchartOutput("comp_domains_chart", height = 240)
             ),
             column(id = "second_country_panel",
-                   class = "country_comparator_panel",
-                   width = 4,
-              highchartOutput("secondGEIChart", height = "120"),
+              class = "country_comparator_panel",
+              width = 4,
+              highchartOutput("second_gei_chart", height = 120),
               selectInput(inputId = "comp_second_country",
                 label = NULL,
                 choices = unique(levels(gei_data$Country)),
@@ -217,17 +256,32 @@ dashboardPage(
           box(width = 12,
             column(id = "domain_charts_panel", width = 2,
               fluidRow(
-                highchartOutput("firstDomainChart", height = "100"),
+                highchartOutput("first_domain_chart", height = 100),
               ),
               fluidRow(
-                htmlOutput("domainDiffHtmlValue")
+                htmlOutput("domain_diff_html_value")
               ),
               fluidRow(
-                highchartOutput("secondDomainChart", height = "100"),
+                highchartOutput("second_domain_chart", height = 100),
               )
             ),
             column(width = 4,
-              highchartOutput("compSubdomainsChart", height = 250)
+              highchartOutput("comp_subdomains_chart", height = 250)
+            ),
+            column(width = 6,
+              fluidRow(
+                htmlOutput("subdomain_html_name")
+              ),
+              fluidRow(
+                div(id = "subdomain_charts_container",
+                  highchartOutput("first_subdomain_chart", height = 80),
+                  htmlOutput("subdomain_diff_html_value", height = 80),
+                  highchartOutput("second_subdomain_chart", height = 80)
+                )
+              ),
+              fluidRow(
+                reactableOutput("comp_indicators_table")
+              )
             )
           )
         )
@@ -241,13 +295,13 @@ dashboardPage(
                 choices = c("CSV", "Excel"),
                 checkIcon = list(yes = icon("ok", lib = "glyphicon"))
               ),
-              downloadButton("downloadData")
+              downloadButton("download_data")
           )
         ),
         fluidRow(class = "tabs_row",
           tabsetPanel(id = "data_tabset_panel",
-            tabPanel("Data table", reactableOutput("dataTable")),
-            tabPanel("Metadata table", reactableOutput("metadataTable"))
+            tabPanel("Data table", reactableOutput("data_table")),
+            tabPanel("Metadata table", reactableOutput("metadata_table"))
           )
         )
       )

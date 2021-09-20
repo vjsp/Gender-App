@@ -1,13 +1,18 @@
+/**************************************/
+/* @author Víctor Julio Sánchez Pollo */
+/* @Version 18/09/2021                */
+/**************************************/
+
 /*============== Header ==============*/
 
 /*---------- Dropdown menu -----------*/
 
-#infoMenu .header,
-#creditsMenu .header {
+#info_menu .header,
+#credits_menu .header {
   color: rgb(84,80,150);
 }
 
-#creditsMenu img {
+#credits_menu img {
   width: 30px;
   height: 30px;
   margin-right: 5px;
@@ -15,8 +20,8 @@
 
 .credit_text {
   display: inline-block;
-  vertical-align: middle;
   font-size: 12px;
+  vertical-align: middle;
 }
 
 
@@ -42,14 +47,14 @@ section.sidebar .shiny-input-container {
 /* Panel animation */
 .top_to_bottom {
   max-height: 500px;
-  animation: topToBottom linear 1s;
   -webkit-animation: topToBottom linear 1s;
   -moz-animation: topToBottom linear 1s;
   -o-animation: topToBottom linear 1s;
   -ms-animation: topToBottom linear 1s;
+  animation: topToBottom linear 1s;
 }
 
-@keyframes topToBottom {
+@-webkit-keyframes topToBottom {
   0% {
     max-height: 0;
   }
@@ -67,17 +72,16 @@ section.sidebar .shiny-input-container {
   }
 }
 
-@-webkit-keyframes topToBottom {
+@-o-keyframes topToBottom {
   0% {
     max-height: 0;
   }
   100% {
     max-height: 500px;
-    overflow: visible;
   }
 }
 
-@-o-keyframes topToBottom {
+@keyframes topToBottom {
   0% {
     max-height: 0;
   }
@@ -93,14 +97,29 @@ section.sidebar .shiny-input-container {
 }
 
 .irs--shiny .irs-handle {
+  top: 20px;
   width: 12px;
   height: 12px;
-  top: 20px;
 }
 
 /* Overwritten picker style */
 .form-control {
   border-radius: 4px;
+}
+
+.skin-purple .sidebar .active {
+  background-color: transparent;
+}
+
+.skin-purple .sidebar .active:hover {
+  background-color: rgb(225, 227, 233);
+}
+
+.skin-purple .sidebar .active .check-mark {
+  position: absolute;
+  display: inline-block;
+  top: 5px;
+  right: 15px;
 }
 
 .skin-purple .sidebar .dropdown a {
@@ -110,6 +129,10 @@ section.sidebar .shiny-input-container {
 
 .skin-purple .sidebar .selected a {
   color: rgb(66, 139, 202);
+}
+
+.skin-purple .sidebar .dropdown-menu {
+  bottom: auto;
 }
 
 .ui-tooltip-content {
@@ -126,14 +149,14 @@ section.sidebar .shiny-input-container {
 
 #legend_container .box-title {
   padding-left: 2px;
-  font-size: 12px;
   color: white;
+  font-size: 12px;
 }
 
 #legend_container .box-body {
   padding: 3px;
-  text-align: center;
   font-size: 10px;
+  text-align: center;
 }
 
 #legend_container .box-body p {
@@ -157,12 +180,12 @@ section.sidebar .shiny-input-container {
 #map_outer, #trend_outer {
   position: relative;
   height: 100%;
-  left: 0;
   right: 0;
+  left: 0;
   padding: 0;
 }
 
-#myMap {
+#my_map {
   width: 100%;
   height: calc(100vh - 50px) !important;
 }
@@ -173,9 +196,30 @@ section.sidebar .shiny-input-container {
     position: absolute;
   }
   
-  #myMap {
+  #my_map {
     height: 100% !important;
   }
+}
+
+
+/*---- Reactables general styling ----*/
+
+.ReactTable .rt-tr {
+  border-top: 1px solid rgb(242, 242, 242);
+}
+
+.ReactTable .rt-td {
+  border: none;
+}
+
+
+/*--------------- Flags ---------------*/
+
+.flagged_country {
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  align-items: center;
 }
 
 
@@ -183,19 +227,19 @@ section.sidebar .shiny-input-container {
 
 #map_indicator_panel,  #trend_indicator_panel {
   position: relative;
-  width: 90%;
+  z-index: 10;
   top: 10px;
   left: 50%;
+  width: 90%;
+  font-family: Verdana;
+  text-align: center;
   -webkit-transform: translateX(-40%);
   -moz-transform: translateX(-40%);
   -ms-transform: translateX(-40%);
   -o-transform: translateX(-40%);
   transform: translateX(-40%);
   cursor: move;
-  text-align: center;
-  font-family: Verdana;
   opacity: 0.7;
-  z-index: 10;
 }
 
 .selectize-input > * {
@@ -204,32 +248,32 @@ section.sidebar .shiny-input-container {
 
 #map_indicator_panel .selectize-dropdown [data-value="GEI"],
 #trend_indicator_panel .selectize-dropdown [data-value="GEI"],
-.GEI_option {
+.gei_option {
+  color: rgb(149, 75, 146);
   font-weight: bold;
   text-transform: uppercase;
-  color: rgb(149, 75, 146);
 }
 
 #map_indicator_panel .selectize-dropdown [data-value^="D"],
 #trend_indicator_panel .selectize-dropdown [data-value^="D"],
-.Domain_option {
-  font-weight: bold;
-  text-transform: uppercase;
+.domain_option {
   color: rgb(50, 50, 50);
   color: rgba(50, 50, 50, 0.9);
+  font-weight: bold;
+  text-transform: uppercase;
 }
 
 #map_indicator_panel .selectize-dropdown [data-value^="S"],
 #trend_indicator_panel .selectize-dropdown [data-value^="S"],
-.Subdomain_option {
-  font-weight: bold;
+.subdomain_option {
   color: rgb(40, 40, 40);
   color: rgba(40, 40, 40, 0.9);
+  font-weight: bold;
 }
 
 #map_indicator_panel .selectize-dropdown [data-value^="I"],
 #trend_indicator_panel .selectize-dropdown [data-value^="I"],
-.Indicator_option {
+.indicator_option {
   color: rgb(30, 30, 30);
   color: rgba(30, 30, 30, 0.9);
 }
@@ -238,18 +282,18 @@ section.sidebar .shiny-input-container {
 /*--------- Map graphs panel ---------*/
 
 #map_graphs {
+  overflow-y: scroll;
   min-width: 250px;
   max-height: calc(100% - 100px);
   margin: 0 5px;
   padding: 3px 0;
-  overflow-y: scroll;
   background-color: white;
   opacity: 0.8;
 }
 
 #eu_value_container {
-  display: -ms-flexbox;
   display: -webkit-flex;
+  display: -ms-flexbox;
   display: flex;
   justify-content: center;
 }
@@ -260,7 +304,7 @@ section.sidebar .shiny-input-container {
   border: none;
 }
 
-#euHtmlValue {
+#eu_html_value {
   margin: auto 0;
   font-weight: 600;
 }
@@ -271,8 +315,8 @@ section.sidebar .shiny-input-container {
 }
 
 .rank_title {
-  text-align: center;
   font-size: 12px;
+  text-align: center;
 }
 
 #ranking_container table th {
@@ -283,35 +327,35 @@ section.sidebar .shiny-input-container {
   padding: 3px;
 }
 
-#countryHtmlValue {
+#country_html_value {
   text-align: center;
 }
 
 #country_html_title {
   display: inline-block;
   margin-top: 6px;
-  text-align: center;
   font-size: 14px;
+  text-align: center;
 }
 
 #country_html_subtitle {
   display: block;
   margin-top: 3px;
-  text-align: center;
   font-size: 12px;
+  text-align: center;
 }
 
 #metrics_charts_container {
-  display: -ms-flexbox;
   display: -webkit-flex;
+  display: -ms-flexbox;
   display: flex;
-  justify-content: center;
   overflow: auto;
+  justify-content: center;
   padding: 2px;
 }
 
 
-/*------------ Trend and data tabs ------------*/
+/*-------- Trend and data tabs --------*/
 
 .tabs_row {
   margin: 10px;
@@ -337,90 +381,77 @@ section.sidebar .shiny-input-container {
 }
 
 
-/*--------- Trend tables ---------*/
+/*----------- Trend tables -----------*/
 
 /* Flags */
-.team {
-  display: flex;
-  align-items: center;
-}
-
-.flag {
-  margin-right: 5px;
+.ReactTable .flag {
   height: 20px;
+  margin-right: 5px;
 }
 
 /* Scores */
 .trend_table_score {
   position: relative;
-  /*float: right;*/
   width: 50px;
-  /*padding: 2px 5px;*/
-  text-align: center;
-  font-size: 13px;
   color: rgb(0, 0, 0);
-  opacity: 0.8;
+  font-size: 13px;
+  text-align: center;
   border: 1px solid rgb(0, 0, 0);
   border: 1px solid rgba(0, 0, 0, 0.03);
   border-radius: 30px;
+  opacity: 0.8;
 }
 
 
-/*---------- Download panel ----------*/
+/*---- Country explorer container ----*/
 
-#download_panel {
-  display: -ms-flexbox;
-  display: -webkit-flex;
+#country_explorer_box_container {
+  font-size: 18px;
+}
+
+#country_html_name {
   display: flex;
-  position: relative;
-  top: 10px;
-  left: 50%;
-  -webkit-transform: translateX(-140px);
-  -moz-transform: translateX(-140px);
-  -ms-transform: translateX(-140px);
-  -o-transform: translateX(-140px);
-  transform: translateX(-140px);
-}
-
-#download_type {
   margin-bottom: 5px;
 }
 
-#download_type .btn {
-  width: 70px;
-  color: rgb(60, 141, 188);
-  background-color: transparent;
+#country_html_name .flagged_country {
+  margin: 0 auto;
 }
 
-#download_type .btn:focus,
-#download_type .btn:hover {
-  color: rgb(149, 75, 146);
-  color: rgba(149, 75, 146, 0.8);
-  background-color: rgb(247,247,247);
+/* Flags */
+#country_explorer_box_container .flag {
+  height: 30px;
+  margin-right: 5px;
 }
 
-#download_type .active,
-#download_type .active:focus,
-#download_type .active:hover {
-  color: rgb(149, 75, 146);
-  border: 1px solid rgb(96, 92, 168);
-  background-color: rgb(255,255,255);
-  box-shadow: none;
+#country_domain_html_title {
+  text-align: center;
 }
 
-#downloadData {
-  width: 140px;
-  height: fit-content;
-  margin-bottom: 5px;
-  color: rgb(255,255,255);
-  background-color: rgb(96, 92, 168);
+#domain_html_title {
+  display: block;
+  margin-top: 6px;
+  font-size: 16px;
+  font-weight: bold;
+  text-transform: uppercase;
 }
 
-#downloadData:focus,
-#downloadData:hover {
-  background-color: rgb(84,80,150);
+#year_html_subtitle {
+  display: block;
+  margin-top: 3px;
+  font-size: 14px;
+  font-weight: bold;
 }
 
+#country_domain_ranking_text {
+  font-size: 14px;
+  font-size: bold;
+  text-align: center;
+}
+
+#country_domain_detail {
+  font-size: 12px;
+}
 
 /*----------- GEI comparator ----------*/
 
@@ -457,7 +488,10 @@ section.sidebar .shiny-input-container {
 }
 
 #domains_buttons_container .btn {
+  overflow: hidden;
   font-size: 12px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   border: none;
 }
 
@@ -549,9 +583,105 @@ section.sidebar .shiny-input-container {
   padding: 10px 0;
 }
 
-#domainDiffHtmlValue {
+#domain_diff_html_value {
   padding: 5px;
-  text-align: center;
   font-size: 14px;
   font-weight: bold;
+  text-align: center;
+}
+
+#subdomain_html_name {
+  font-size: 14px;
+  text-align: center;
+}
+
+#subdomain_charts_container {
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  overflow: auto;
+  justify-content: center;
+  padding: 2px;
+}
+
+#subdomain_diff_html_value {
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  margin: auto;
+  font-size: 12px;
+  font-weight: bold;
+  text-align: center;
+}
+
+#subdomain_diff_html_value div {
+  width: max-content;
+}
+
+#comp_indicators_table .-header {
+  display: none;
+}
+
+.comp_indicators_table_score {
+  position: relative;
+  width: 50px;
+  text-align: center;
+  border: 1px solid;
+  border-radius: 30px;
+}
+
+
+/*---------- Download panel ----------*/
+
+#download_panel {
+  position: relative;
+  top: 10px;
+  left: 50%;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-transform: translateX(-140px);
+  -moz-transform: translateX(-140px);
+  -ms-transform: translateX(-140px);
+  -o-transform: translateX(-140px);
+  transform: translateX(-140px);
+}
+
+#download_type {
+  margin-bottom: 5px;
+}
+
+#download_type .btn {
+  width: 70px;
+  color: rgb(60, 141, 188);
+  background-color: transparent;
+}
+
+#download_type .btn:focus,
+#download_type .btn:hover {
+  color: rgb(149, 75, 146);
+  color: rgba(149, 75, 146, 0.8);
+  background-color: rgb(247,247,247);
+}
+
+#download_type .active,
+#download_type .active:focus,
+#download_type .active:hover {
+  color: rgb(149, 75, 146);
+  border: 1px solid rgb(96, 92, 168);
+  background-color: rgb(255,255,255);
+  box-shadow: none;
+}
+
+#download_data {
+  width: 140px;
+  height: fit-content;
+  margin-bottom: 5px;
+  color: rgb(255,255,255);
+  background-color: rgb(96, 92, 168);
+}
+
+#download_data:focus,
+#download_data:hover {
+  background-color: rgb(84,80,150);
 }
