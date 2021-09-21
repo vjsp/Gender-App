@@ -182,24 +182,26 @@ dashboardPage(
       ),
       # Country Explorer content
       tabItem(tabName = "country",
-        box(id = "country_explorer_box_container",
-          width = 12,
-          fluidRow(
-            column(width = 4,
-              htmlOutput("country_html_name"),
-              highchartOutput("country_trend_chart", height = 180)
+        div(id = "country_explorer_box_container",
+          box(
+            width = 12,
+            fluidRow(
+              column(width = 4,
+                htmlOutput("country_html_name"),
+                highchartOutput("country_trend_chart", height = 180)
+              ),
+              column(width = 4,
+                htmlOutput("country_domain_html_title"),
+                highchartOutput("country_domain_chart", height = 120),
+                textOutput("country_domain_ranking_text")
+              ),
+              column(width = 4,
+                htmlOutput("country_domain_html_detail"),
+              )
             ),
-            column(width = 4,
-              htmlOutput("country_domain_html_title"),
-              highchartOutput("country_domain_chart", height = 120),
-              textOutput("country_domain_ranking_text")
-            ),
-            column(width = 4,
-              htmlOutput("country_domain_html_detail"),
+            fluidRow(
+              reactableOutput("country_trend_table")
             )
-          ),
-          fluidRow(
-            reactableOutput("country_trend_table")
           )
         )
       ),

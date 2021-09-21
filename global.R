@@ -305,6 +305,23 @@ apply_alpha_to_color <- function(color, alpha = 1) {
     rgb(rgb_color[1],rgb_color[2],rgb_color[3], alpha * 255, maxColorValue = 255)
 }}
 
+# Function to transform a cardinal into an ordinal number
+# In case of passing a decimal number, this is rounded out
+# @param number - The number to be transformed into an ordinal
+# @return A string with the ordinal number in short format (i.e. 1st)
+number_to_ordinal <- function(number) {
+  rounded_number <- round(number)
+  ifelse((rounded_number %% 10 == 1) & (rounded_number %% 100 != 11),
+    paste0(rounded_number, "st"),
+    ifelse((rounded_number %% 10 == 2) & (rounded_number %% 100 != 12),
+      paste0(rounded_number, "nd"),
+      ifelse((rounded_number %% 10 == 3) & (rounded_number %% 100 != 13),
+        paste0(rounded_number, "rd"),
+        paste0(rounded_number, "th")
+      )
+    )
+  )
+} 
 
 ###=============== JS scripts ===============###
 

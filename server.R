@@ -460,7 +460,7 @@ function(input, output, session) {
   observeEvent(input$trend_years, {
     if (input$trend_years[1] == input$trend_years[2]) {
       if (input$trend_years[1] == min(gei_years)) {
-        updateSliderTextInput(session,"trend_years",
+        updateSliderTextInput(session, "trend_years",
           selected = c(
             input$trend_years[1],
             gei_years[match(input$trend_years[2], gei_years) + 1]
@@ -489,7 +489,8 @@ function(input, output, session) {
       hc_add_series(data, type="line", name = unique(data$Country),
                     hcaes(x = Year, y = Indicator, group = Country),
                     showInLegend = TRUE) %>%
-      hc_xAxis(title = list(text = "Year"), allowDecimals = FALSE) %>%
+      hc_xAxis(title = list(text = "Year"), allowDecimals = FALSE,
+               tickPositions = gei_years) %>%
       hc_yAxis(title = list(text = "Score")) %>%
       hc_legend(layout = "vertical", align = "right", padding = 20) %>%
       hc_exporting(enabled = TRUE,
@@ -538,8 +539,7 @@ function(input, output, session) {
       },
       align = "center",
       style = function(value) {
-        list(display = "flex", flexDirection = "column", alignSelf = "center",
-             alignItems = "center", color = my_pal(value))
+        list(display = "flex", flexDirection = "column")
       })) %>%
       rep(length(col_names)) %>%
       `names<-`(col_names)
@@ -612,7 +612,7 @@ function(input, output, session) {
       },
       align = "center",
       style = function(value, index, name) {
-        list(alignSelf = "center", color = trend_pal(value), fontWeight = 600)
+        list(color = trend_pal(value), fontWeight = 600)
       }
     )) %>%
       rep(length(col_names)) %>%
@@ -706,20 +706,61 @@ function(input, output, session) {
   # When GEI is selected, it returns GEI and domains data. If a domain is
   # selected, it returns that domain and its subdomains and indicators.
   country_trend_table_data_r <- reactive({
+    # Define useful variables
+    selected_year <- as.character(input$country_year)
+    prev_year <- as.character(gei_years[match(selected_year,gei_years) - 1])
+    first_year <- as.character(gei_years[1])
+    prev_year_var_name <- paste(selected_year, "vs.", prev_year)
+    first_year_var_name <- paste(selected_year, "vs.", first_year)
+    
+    # Obtain table indicators
+    indicator_id <- gei_full_indicators %>%
+      filter(`Indicator (s)` == country_domain_r()) %>%
+      pull(Id)
+    
     if (country_domain_r() == "Gender Equality Index") {
-      gei_data %>%
-        filter(Country == input$country_country) %>%
-        select(Year,
-               gei_full_indicators %>% 
-                 filter(Id == "GEI" | `Parent Id` == "GEI") %>% 
-                 select("Indicator (s)") %>%
-                 unlist(use.names = FALSE)) %>%
-        `rownames<-`(.[,1]) %>%
-        select(-Year) %>%
-        t() %>%
-        as.data.frame() %>%
-        tibble::rownames_to_column("Indicator")
+      indicators <- gei_full_indicators %>%
+        filter(Id == indicator_id | `Parent Id` == "GEI") %>% 
+        select("Indicator (s)") %>%
+        unlist(use.names = FALSE)
+    } else {
+      indicators <- gei_full_indicators %>%
+        filter(Id == indicator_id |
+                 `Parent Id` == indicator_id |
+                 `Parent Id` %in% (gei_full_indicators %>%
+                                    filter(`Parent Id` == indicator_id) %>%
+                                    select(Id) %>%
+                                    unlist(use.names = FALSE))) %>%
+        select("Indicator (s)") %>%
+        unlist(use.names = FALSE)
     }
+
+    # Build country trend data frame 
+    country_trend_table_data <- gei_data %>%
+      filter(Country == input$country_country) %>%
+      select(Year, all_of(indicators)) %>%
+      `rownames<-`(.[,1]) %>%
+      select(-Year) %>%
+      t() %>%
+      as.data.frame() %>%
+      tibble::rownames_to_column("Indicator")
+    
+    if (selected_year != first_year) {
+      country_trend_table_data %<>%
+        mutate(!!prev_year_var_name := 
+                 (!!as.name(selected_year) - !!as.name(prev_year)))
+      
+      if (prev_year != first_year) {
+        country_trend_table_data %<>%
+          mutate(!!first_year_var_name :=
+                   (!!as.name(selected_year) - !!as.name(first_year)))
+      }
+      
+      country_trend_table_data %<>%
+        mutate_if(is.numeric, round, digits = 2)
+    }
+  
+    country_trend_table_data
   })
 
     
@@ -848,7 +889,7 @@ function(input, output, session) {
                  sprintf(
                    paste0(" and ranks in the %s position in the EU-28.",
                           " It's %s points %s the EU's score."),
-                   domain_ranking,
+                   number_to_ordinal(domain_ranking),
                    abs(round(eu_difference, 2)),
                    ifelse(eu_difference >= 0, "above", "below")
                  ),
@@ -860,9 +901,116 @@ function(input, output, session) {
   })
   
   output$country_trend_table <- renderReactable({
+    # Define data and useful variables
     data <- country_trend_table_data_r()
-    print(data)
-    reactable(data)
+    selected_year <- as.character(input$country_year)
+    prev_year <- as.character(gei_years[match(selected_year, gei_years) - 1])
+    first_year <- as.character(gei_years[1])
+    
+    # Define column styles
+    score_col_names <- as.character(gei_years[gei_years != input$country_year])
+    prev_year_var_name <- paste(selected_year, "vs.", prev_year)
+    first_year_var_name <- paste(selected_year, "vs.", first_year)
+    var_col_names <- data %>%
+      select(-c(Indicator, all_of(score_col_names), all_of(selected_year))) %>%
+      colnames()
+    indicator_col_def <- list(colDef(
+      align = "left",
+      style = function(value, index, name) {
+        if (country_domain_r() == "Gender Equality Index") {
+          list(position = "sticky", zIndex = 1, left = 0,
+               color = gei_domain_color_mapping[[value]],
+               fontWeight = "bold",
+               textTransform = "uppercase",
+               backgroundColor = "white")
+        } else {
+          indicator_type <- gei_full_indicators %>%
+            filter(`Indicator (s)` == value) %>%
+            pull(Type)
+          if (indicator_type %in% c("Domain","Subdomain")) {
+            list(position = "sticky", zIndex = 1, left = 0,
+                 color = domain_color_mapping[[country_domain_r()]],
+                 fontWeight = "bold",
+                 backgroundColor = "white")
+          } else {
+            list(position = "sticky", zIndex = 1, left = 0,
+                 backgroundColor = "white")
+          }
+        }
+      },
+      headerStyle = list(position = "sticky", zIndex = 1, left = 0,
+                         backgroundColor = "white")
+    )) %>%
+      `names<-`("Indicator")
+    selected_year_col_def <- list(colDef(
+      cell = function(value) {
+        div(class = "trend_table_score",
+            style = list(backgroundColor = apply_alpha_to_color(my_pal(value),
+                                                                0.7)),
+            value)
+      },
+      align = "center",
+      minWidth = 60,
+      style = list(display = "flex", flexDirection = "column",
+                   backgroundColor = rgb(242, 242, 242, maxColorValue = 255)),
+      headerStyle = list(backgroundColor = rgb(242, 242, 242,
+                                               maxColorValue = 255))
+    )) %>%
+      `names<-`(selected_year)
+    score_cols_defs <- list(colDef(
+      cell = function(value) {
+        div(class = "trend_table_score",
+            style = list(backgroundColor = apply_alpha_to_color(my_pal(value),
+                                                                0.7)),
+            value)
+      },
+      align = "center",
+      minWidth = 60,
+      style = list(display = "flex", flexDirection = "column")
+    )) %>%
+      rep(length(score_col_names)) %>%
+      `names<-`(score_col_names)
+    variations_cols_defs <- list(colDef(
+      cell = function(value) {
+        if (value > 0) {
+          paste0("+", value)
+        } else {
+          value
+        }
+      },
+      align = "center",
+      minWidth = 60,
+      style = function(value, index, name) {
+        list(color = trend_pal(value), fontWeight = 600,
+             backgroundColor = rgb(242, 242, 242, maxColorValue = 255))
+      },
+      headerStyle = list(backgroundColor = rgb(242, 242, 242,
+                                               maxColorValue = 255))
+    )) %>%
+      rep(length(var_col_names)) %>%
+      `names<-`(var_col_names)
+    col_defs <- c(indicator_col_def, selected_year_col_def, score_cols_defs,
+                  variations_cols_defs)
+    
+    reactable(data,
+              showSortable = TRUE,
+              pagination = FALSE,
+              columns = col_defs,
+              rowStyle = function(index) {
+                if (data$Indicator[index] == country_domain_r()) {
+                  list(
+                    borderTop = paste("1px", "solid",
+                      gei_domain_color_mapping[[country_domain_r()]]),
+                    borderBottom = paste("1px", "solid",
+                      gei_domain_color_mapping[[country_domain_r()]])
+                  )
+                }
+              },
+              height = "380px",
+              style = list(
+                fontSize = 12
+              )
+    )
   })
   
   
