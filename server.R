@@ -532,7 +532,7 @@ function(input, output, session) {
       `names<-`("Country")
     scores_cols_defs <- list(colDef(
       cell = function(value) {
-        div(class = "trend_table_score",
+        div(class = "table_score",
             style = list(backgroundColor = apply_alpha_to_color(my_pal(value),
                                                                 0.7)),
             value)
@@ -573,7 +573,9 @@ function(input, output, session) {
     # Create table
     reactable(data,
               showSortable = TRUE,
-              columns = col_defs)
+              columns = col_defs,
+              theme = center_rt_theme
+    )
   })
   
   output$trend_var_table <- renderReactable({
@@ -604,15 +606,13 @@ function(input, output, session) {
       `names<-`("Country")
     variations_cols_defs <- list(colDef(
       cell = function(value) {
-        if (value > 0) {
-          paste0("+", value)
-        } else {
-          value
-        }
+        div(class = "table_var",
+            ifelse (value > 0, paste0("+", value), value))
       },
       align = "center",
       style = function(value, index, name) {
-        list(color = trend_pal(value), fontWeight = 600)
+        list(display = "flex", flexDirection = "column",
+             color = trend_pal(value), fontWeight = 600)
       }
     )) %>%
       rep(length(col_names)) %>%
@@ -646,7 +646,9 @@ function(input, output, session) {
     # Create table
     reactable(data,
               showSortable = TRUE,
-              columns = col_defs)
+              columns = col_defs,
+              theme = center_rt_theme
+    )
   })
 
   
@@ -760,7 +762,8 @@ function(input, output, session) {
         mutate_if(is.numeric, round, digits = 2)
     }
   
-    country_trend_table_data
+    country_trend_table_data %>%
+      tibble::rowid_to_column("Order")
   })
 
     
@@ -823,11 +826,7 @@ function(input, output, session) {
              "<text id = 'year_html_subtitle'>
                <tspan>%s</tspan>
              </text>"),
-      ifelse(
-        country_domain_r() == "Gender Equality Index",
-        gei_color,
-        domain_color_mapping[country_domain_r()]
-      ),
+      gei_domain_color_mapping[country_domain_r()],
       domain,
       year
     ))
@@ -865,15 +864,47 @@ function(input, output, session) {
   
   output$country_domain_html_detail = renderUI ({
     # Gather all the necessary data
-    year <- input$country_year
+    year <- as.character(input$country_year)
+    prev_year <- as.character(gei_years[match(year,gei_years) - 1])
+    first_year <- as.character(gei_years[1])
+    prev_year_var_name <- paste(year, "vs.", prev_year)
+    first_year_var_name <- paste(year, "vs.", first_year)
+    
     country <- input$country_country
     is_country <- input$country_country != "European Union 28"
+    
+    domain <- country_domain_r()
+    is_gei <- domain == "Gender Equality Index"
+    
     domain_score <- country_domain_data_r()$Score
     if (is_country) {
       domain_ranking <- country_domain_data_r()$Rank
     }
     eu_score <- eu_domain_data_r()$Score
     eu_difference <- domain_score - eu_score
+    
+    domain_data <- country_trend_table_data_r() %>%
+      filter(Indicator == domain)
+    if (year != first_year) {
+      first_variation <- domain_data %>%
+        pull(first_year_var_name)
+      
+      if(prev_year != first_year) {
+        prev_variation <- domain_data %>%
+          pull(prev_year_var_name)
+      }
+    }
+    
+    indicators <-
+    if (is_gei) {
+      sorted_by_score_data <- country_trend_table_data_r() %>%
+        filter(Indicator != domain) %>%
+        arrange_at(year, list(desc))
+      best_domain <- sorted_by_score_data %>%
+        head(1)
+      worst_domain <- sorted_by_score_data %>%
+        tail(1)
+    }
     
     # Build the detail
     div(
@@ -894,6 +925,37 @@ function(input, output, session) {
                    ifelse(eu_difference >= 0, "above", "below")
                  ),
                  "."
+          ),
+          ifelse(year != first_year,
+                 paste0(
+                   sprintf(
+                     "<br/>Since %s, its score has %s by %s points",
+                     first_year,
+                     ifelse(first_variation >= 0, "increased", "decreased"),
+                     abs(round(first_variation, 2))
+                   ),
+                   ifelse(prev_year != first_year,
+                          sprintf(
+                            " (with %s of %s points since %s).",
+                            ifelse(prev_variation >= 0,
+                                   "an increase",
+                                   "a decrease"),
+                            prev_variation,
+                            prev_year),
+                          "."
+                    )
+                 ),
+                 ""
+          ),
+          sprintf(
+            paste0("<br/>%s is its strongest %s with %s points,",
+                   " whereas %s (%s points) is the one with the most room for",
+                   " improvement."),
+            best_domain %>% pull(Indicator),
+            ifelse(is_gei, "domain", "indicator"),
+            best_domain %>% pull(!!year),
+            worst_domain %>% pull(Indicator),
+            worst_domain %>% pull(!!year)
           )
         )
       )
@@ -912,8 +974,15 @@ function(input, output, session) {
     prev_year_var_name <- paste(selected_year, "vs.", prev_year)
     first_year_var_name <- paste(selected_year, "vs.", first_year)
     var_col_names <- data %>%
-      select(-c(Indicator, all_of(score_col_names), all_of(selected_year))) %>%
+      select(-c(Order, Indicator, all_of(score_col_names),
+                all_of(selected_year))) %>%
       colnames()
+    order_col_def <- list(colDef(
+      name = "",
+      align = "center",
+      width = 30
+    )) %>%
+      `names<-`("Order")
     indicator_col_def <- list(colDef(
       align = "left",
       style = function(value, index, name) {
@@ -929,7 +998,7 @@ function(input, output, session) {
             pull(Type)
           if (indicator_type %in% c("Domain","Subdomain")) {
             list(position = "sticky", zIndex = 1, left = 0,
-                 color = domain_color_mapping[[country_domain_r()]],
+                 color = gei_domain_color_mapping[[country_domain_r()]],
                  fontWeight = "bold",
                  backgroundColor = "white")
           } else {
@@ -944,7 +1013,7 @@ function(input, output, session) {
       `names<-`("Indicator")
     selected_year_col_def <- list(colDef(
       cell = function(value) {
-        div(class = "trend_table_score",
+        div(class = "table_score",
             style = list(backgroundColor = apply_alpha_to_color(my_pal(value),
                                                                 0.7)),
             value)
@@ -959,7 +1028,7 @@ function(input, output, session) {
       `names<-`(selected_year)
     score_cols_defs <- list(colDef(
       cell = function(value) {
-        div(class = "trend_table_score",
+        div(class = "table_score",
             style = list(backgroundColor = apply_alpha_to_color(my_pal(value),
                                                                 0.7)),
             value)
@@ -972,16 +1041,14 @@ function(input, output, session) {
       `names<-`(score_col_names)
     variations_cols_defs <- list(colDef(
       cell = function(value) {
-        if (value > 0) {
-          paste0("+", value)
-        } else {
-          value
-        }
+        div(class = "table_var",
+            ifelse (value > 0, paste0("+", value), value))
       },
       align = "center",
       minWidth = 60,
       style = function(value, index, name) {
-        list(color = trend_pal(value), fontWeight = 600,
+        list(display = "flex", flexDirection = "column",
+             color = trend_pal(value), fontWeight = 600,
              backgroundColor = rgb(242, 242, 242, maxColorValue = 255))
       },
       headerStyle = list(backgroundColor = rgb(242, 242, 242,
@@ -989,8 +1056,8 @@ function(input, output, session) {
     )) %>%
       rep(length(var_col_names)) %>%
       `names<-`(var_col_names)
-    col_defs <- c(indicator_col_def, selected_year_col_def, score_cols_defs,
-                  variations_cols_defs)
+    col_defs <- c(order_col_def, indicator_col_def, selected_year_col_def,
+                  score_cols_defs, variations_cols_defs)
     
     reactable(data,
               showSortable = TRUE,
@@ -1009,7 +1076,8 @@ function(input, output, session) {
               height = "380px",
               style = list(
                 fontSize = 12
-              )
+              ),
+              theme = center_rt_theme
     )
   })
   
@@ -1144,7 +1212,7 @@ function(input, output, session) {
     # the selected domain
     runjs(paste0(
       '$("#domain_comparator_container .box").css("border-color", "',
-      domain_color_mapping[input$comp_domain]
+      gei_domain_color_mapping[input$comp_domain]
       ,'");'
     ))
   })
@@ -1293,7 +1361,7 @@ function(input, output, session) {
   output$subdomain_html_name <- renderUI({
     domain <- comp_subdomain_r()
     div(HTML(sprintf("<text style='color:%s'> %s </text>",
-                     domain_color_mapping[input$comp_domain],
+                     gei_domain_color_mapping[input$comp_domain],
                      domain)))
   })
   
@@ -1350,7 +1418,7 @@ function(input, output, session) {
       align = "center",
       width = 60,
       style = function(value) {
-        list(alignSelf = "center", color = my_pal(value))
+        list(color = my_pal(value))
       }
     )) %>%
       `names<-`(first_data_name_r())
@@ -1364,9 +1432,9 @@ function(input, output, session) {
       html = TRUE,
       width = 60,
       style = function(value) {
-        list(alignSelf = "center", color = ifelse(value > 0,
-                                                  first_country_color, 
-                                                  second_country_color))
+        list(color = ifelse(value > 0,
+                            first_country_color,
+                            second_country_color))
       }
     )) %>%
       `names<-`("Difference")
@@ -1381,7 +1449,7 @@ function(input, output, session) {
       align = "center",
       width = 60,
       style = function(value) {
-        list(alignSelf = "center", color = my_pal(value))
+        list(color = my_pal(value))
       }
     )) %>%
       `names<-`(second_data_name_r())
@@ -1393,7 +1461,9 @@ function(input, output, session) {
               columns = col_defs,
               style = list(
                 fontSize = 12
-              ))
+              ),
+              theme = center_rt_theme
+    )
   })
   
   
@@ -1474,7 +1544,8 @@ function(input, output, session) {
               columns = col_defs,
               style = list(
                 fontSize = 12
-              )
+              ),
+              theme = center_rt_theme
     )
   })
   

@@ -110,17 +110,14 @@ trend_pal <- function(value = NA) {
   )
 }
 
-# Domain color mapping
-domain_color_mapping <- list("WORK" = work_color,
-                             "MONEY" = money_color,
-                             "KNOWLEDGE" = knowledge_color,
-                             "TIME" = time_color,
-                             "POWER" = power_color,
-                             "HEALTH" = health_color)
-
 # GEI-Domain color mapping (include both, GEI and domains)
 gei_domain_color_mapping <- c("Gender Equality Index" = gei_color,
-                              domain_color_mapping)
+                              "WORK" = work_color,
+                              "MONEY" = money_color,
+                              "KNOWLEDGE" = knowledge_color,
+                              "TIME" = time_color,
+                              "POWER" = power_color,
+                              "HEALTH" = health_color)
 
 
 ###=========== Highcharter themes ===========###
@@ -130,6 +127,16 @@ my_hc_theme <- hc_theme(
   chart = list(
     style = list(fontFamily = "Source Sans Pro")
   )
+)
+
+
+###============ Reactable themes ============###
+center_rt_theme <- reactableTheme(
+  # Vertically center cells
+  headerStyle = list(display = "flex", flexDirection = "column",
+                     justifyContent = "center"),
+  cellStyle = list(display = "flex", flexDirection = "column",
+                   justifyContent = "center")
 )
 
 

@@ -201,18 +201,6 @@ section.sidebar .shiny-input-container {
   }
 }
 
-
-/*---- Reactables general styling ----*/
-
-.ReactTable .rt-tr {
-  border-top: 1px solid rgb(242, 242, 242);
-}
-
-.ReactTable .rt-td {
-  border: none;
-}
-
-
 /*--------------- Flags ---------------*/
 
 .flagged_country {
@@ -390,10 +378,8 @@ section.sidebar .shiny-input-container {
 }
 
 /* Scores */
-.trend_table_score {
-  position: relative;
+.table_score {
   width: 50px;
-  margin: auto 0;
   align-self: center;
   color: rgb(0, 0, 0);
   font-size: 13px;
@@ -402,6 +388,11 @@ section.sidebar .shiny-input-container {
   border: 1px solid rgba(0, 0, 0, 0.03);
   border-radius: 30px;
   opacity: 0.8;
+}
+
+/* Variations */
+.table_var {
+  font-size: 14px;
 }
 
 
