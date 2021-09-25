@@ -1857,6 +1857,7 @@ function(input, output, session) {
     )
   })
   
+  # Output used to adapt the style of the info subdomain buttons dinamically
   output$domain_select_style <- renderUI({
     tags$head(tags$style(
       HTML(sprintf(
