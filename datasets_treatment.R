@@ -1,6 +1,6 @@
 ############## Datasets treatment ##############
 # @author Víctor Julio Sánchez Pollo           #
-# @version 18/09/2021                          #
+# @version 25/09/2021                          #
 ################################################
 
 ###=============== Libraries ===============###
@@ -85,6 +85,7 @@ gei_metadata_df <- data.frame(gei_file_data["Metadata"]) %>%
   slice(-c(1,nrow(.))) %>%
   rename(Indicator = "Indicator and reference population") %>%
   # Remove leading a trailing whitespaces
+  mutate_if(is.character, funs(gsub("(^\\s+)|(\\s+$)", "", .))) %>%
   `colnames<-`(gsub("(^\\s+)|(\\s+$)", "", names(.)))
 # Save df as RDS
 saveRDS(gei_metadata_df, file = "data/GEI_metadata.rds")

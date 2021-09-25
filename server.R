@@ -1,6 +1,6 @@
 ################### server.R ###################
 # @author Víctor Julio Sánchez Pollo           #
-# @version 18/09/2021                          #
+# @version 25/09/2021                          #
 ################################################
 
 function(input, output, session) {
@@ -55,8 +55,8 @@ function(input, output, session) {
     dropdownMenu(type = "notifications",
                  notificationItem(
                    text = div(
-                     HTML("<img src='images/icons/eige.svg'
-                          alt='EIGE Icon'>"),
+                     HTML("<img src = 'images/icons/eige.svg'
+                          alt = 'EIGE Icon'>"),
                      div(class = "credit_text",
                          "All data and descriptions are property of the",
                          br(),
@@ -67,8 +67,8 @@ function(input, output, session) {
                  ),
                  notificationItem(
                    text = div(
-                     HTML("<img src='images/icons/freepik.svg'
-                          alt='Freepik Icon'>"),
+                     HTML("<img src = 'images/icons/freepik.svg'
+                          alt = 'Freepik Icon'>"),
                      div(class = "credit_text",
                          "Country flag icons designed by Freepik")
                    ),
@@ -80,8 +80,72 @@ function(input, output, session) {
                  headerText = "Credits"
     )
   })
-
   
+  
+  
+  ###============== Sidebar ==============###
+  
+  # All these input elements are rendered in the server because otherwise
+  # they are shown at startup until the panels conditions are evaluated
+  
+  output$trend_years_slider <- renderUI({
+    sliderTextInput("trend_years",
+                    label = h5("Select years range"),
+                    choices = gei_years,
+                    selected = default_year_range
+    )
+  })
+  
+  output$trend_countries_picker <- renderUI({
+    pickerInput("trend_countries",
+                label = h5("Select countries"), 
+                choices = unique(levels(gei_data$Country)),
+                selected = c("European Union 28", "France", "Greece", "Spain",
+                           "Sweden","United Kingdom"),
+                options = list(`actions-box` = TRUE,
+                             `dropup-auto` = FALSE),
+                multiple = TRUE
+    )
+  })
+  
+  output$country_year_slider <- renderUI({
+    sliderTextInput("country_year",
+                    label = h5("Select year"),
+                    choices = gei_years,
+                    selected = current_year,
+                    animate = FALSE
+    )
+  })
+
+  output$country_country_picker <- renderUI({
+    pickerInput("country_country",
+                label = h5("Select country"), 
+                choices = unique(levels(gei_data$Country)),
+                selected = c("Spain"),
+    )
+  })
+  
+  output$data_years_picker <- renderUI({
+    pickerInput("data_years",
+                label = h5("Select years"),
+                choices = gei_years,
+                selected = gei_years,
+                options = list(`actions-box` = TRUE,
+                               `dropup-auto` = FALSE),
+                multiple = TRUE
+    )
+  })
+  
+  output$data_countries_picker <- renderUI({
+    pickerInput("data_countries",
+                label = h5("Select countries"), 
+                choices = unique(levels(gei_data$Country)),
+                selected = unique(levels(gei_data$Country)),
+                options = list(`actions-box` = TRUE,
+                               `dropup-auto` = FALSE),
+                multiple = TRUE
+    )
+  })
 
   ###============== Map Explorer ==============###
   
@@ -340,9 +404,12 @@ function(input, output, session) {
   output$country_html_value <- renderUI({
     value <- gei_indicator_value_r()
     HTML(sprintf(
-      paste0("<text id = 'country_html_title'><tspan>%s</tspan></text>",
-             "<text id = 'country_html_subtitle' style = 'color:%s'>",
-             "<tspan>%s</tspan></text>"),
+      "<text id = 'country_html_title'>
+        <tspan>%s</tspan>
+      </text>
+      <text id = 'country_html_subtitle' style = 'color:%s'>
+        <tspan>%s</tspan>
+      </text>",
       gei_year_country_data_r()$Country,
       my_pal(gei_indicator_value_r()),
       value))
@@ -722,7 +789,7 @@ function(input, output, session) {
     
     if (country_domain_r() == "Gender Equality Index") {
       indicators <- gei_full_indicators %>%
-        filter(Id == indicator_id | `Parent Id` == "GEI") %>% 
+        filter(Id == indicator_id | `Parent Id` == indicator_id) %>% 
         select("Indicator (s)") %>%
         unlist(use.names = FALSE)
     } else {
@@ -774,6 +841,16 @@ function(input, output, session) {
     country_domain_r(input$country_clicked_domain)
   })
   
+  # It adapts the color of the country explorer container taking into account
+  # the selected domain
+  observeEvent(country_domain_r(), {
+    runjs(paste0(
+      '$("#country_explorer_box_container .box").css("border-color", "',
+      gei_domain_color_mapping[country_domain_r()]
+      ,'");'
+    ))
+  })
+  
   
   ##----------------- Outputs -----------------##
   
@@ -798,7 +875,7 @@ function(input, output, session) {
       hc_colors(c(gei_color, health_color, knowledge_color, money_color,
                   power_color, time_color, work_color)) %>%
       hc_xAxis(title = list(text = "Year"), allowDecimals = FALSE,
-               tickPositions = gei_years) %>%
+               tickPositions = gei_years, labels = list(rotation = -45)) %>%
       hc_yAxis(title = list(text = "Score"), maxPadding = 0.005) %>%
       hc_pane(size = "100%") %>%
       hc_plotOptions(
@@ -808,6 +885,7 @@ function(input, output, session) {
               Shiny.onInputChange('country_clicked_domain',
                                   [event.point.series.name])
             }")))) %>%
+      hc_tooltip(style = list(textTransform = "uppercase")) %>%
       hc_credits(enabled = TRUE,
                  text = "*Click on lines to explore domains",
                  href = "",
@@ -820,12 +898,12 @@ function(input, output, session) {
     domain <- country_domain_r()
     year <- input$country_year
     HTML(sprintf(
-      paste0("<text id = 'domain_html_title' style = 'color:%s'>
-               <tspan>%s</tspan>
-             </text>",
-             "<text id = 'year_html_subtitle'>
-               <tspan>%s</tspan>
-             </text>"),
+      "<text id = 'domain_html_title' style = 'color:%s'>
+        <tspan>%s</tspan>
+      </text>
+      <text id = 'year_html_subtitle'>
+        <tspan>%s</tspan>
+      </text>",
       gei_domain_color_mapping[country_domain_r()],
       domain,
       year
@@ -869,9 +947,11 @@ function(input, output, session) {
     first_year <- as.character(gei_years[1])
     prev_year_var_name <- paste(year, "vs.", prev_year)
     first_year_var_name <- paste(year, "vs.", first_year)
+    is_current_year <- year == as.character(current_year)
     
     country <- input$country_country
     is_country <- input$country_country != "European Union 28"
+    is_country_with_the <- country %in% countries_with_the
     
     domain <- country_domain_r()
     is_gei <- domain == "Gender Equality Index"
@@ -895,70 +975,125 @@ function(input, output, session) {
       }
     }
     
-    indicators <-
-    if (is_gei) {
-      sorted_by_score_data <- country_trend_table_data_r() %>%
-        filter(Indicator != domain) %>%
-        arrange_at(year, list(desc))
-      best_domain <- sorted_by_score_data %>%
-        head(1)
-      worst_domain <- sorted_by_score_data %>%
-        tail(1)
+    indicator_id <- gei_full_indicators %>%
+      filter(`Indicator (s)` == domain) %>%
+      pull(Id)
+    ifelse(is_gei,
+      indicators <- gei_full_indicators %>%
+        filter(`Parent Id` == indicator_id) %>%
+        select("Indicator (s)") %>%
+        unlist(use.names = FALSE),
+      indicators <- gei_full_indicators %>%
+        filter(`Parent Id` %in% (gei_full_indicators %>%
+                                   filter(`Parent Id` == indicator_id) %>%
+                                   select(Id) %>%
+                                   unlist(use.names = FALSE))) %>%
+        select("Indicator (s)") %>%
+        unlist(use.names = FALSE)
+    )
+    sorted_by_score_data <- country_trend_table_data_r() %>%
+      filter(Indicator %in% indicators) %>%
+      arrange_at(year, list(desc))
+    best_indicator <- sorted_by_score_data %>%
+      head(1) %>%
+      pull(Indicator)
+    best_indicator_score <- sorted_by_score_data %>%
+      head(1) %>%
+      pull(!!year)
+    worst_indicator <- sorted_by_score_data %>%
+      tail(1) %>%
+      pull(Indicator)
+    worst_indicator_score <- sorted_by_score_data %>%
+      tail(1) %>%
+      pull(!!year)
+    if (year != first_year) {
+      sorted_by_prev_var_data <- country_trend_table_data_r() %>%
+        filter(Indicator %in% indicators) %>%
+        arrange_at(prev_year_var_name, list(desc))
+      most_improved_indicator <- sorted_by_prev_var_data %>%
+        head(1) %>%
+        pull(Indicator)
+      most_improved_indicator_score <- sorted_by_prev_var_data %>%
+        head(1) %>%
+        pull(prev_year_var_name)
     }
     
     # Build the detail
-    div(
-      id = "country_domain_detail",
-      HTML(
+    tags$ul(
+      tags$li(HTML(
         paste0(
-          sprintf("In the %s edition, %s<b>%s</b> scores %s points",
+          sprintf("In the %s edition, %s<b id = '%s'>%s</b> %s %s points",
                   year,
-                  ifelse(is_country, "", "the "),
+                  ifelse(is_country_with_the, "the ", ""),
+                  "country_name_detail",
                   ifelse(is_country, country, "European Union"),
+                  ifelse(is_current_year, "scores", "scored"),
                   domain_score),
           ifelse(is_country,
-                 sprintf(
-                   paste0(" and ranks in the %s position in the EU-28.",
-                          " It's %s points %s the EU's score."),
-                   number_to_ordinal(domain_ranking),
-                   abs(round(eu_difference, 2)),
-                   ifelse(eu_difference >= 0, "above", "below")
+                 sprintf(" and %s in the %s position in the EU-28. It %s %s points %s
+                           the EU's score.",
+                         ifelse(is_current_year, "ranks", "ranked"),
+                         number_to_ordinal(domain_ranking),
+                         ifelse(is_current_year, "is", "was"),
+                         abs(round(eu_difference, 2)),
+                         ifelse(eu_difference >= 0, "above", "below")
                  ),
                  "."
-          ),
-          ifelse(year != first_year,
-                 paste0(
-                   sprintf(
-                     "<br/>Since %s, its score has %s by %s points",
-                     first_year,
-                     ifelse(first_variation >= 0, "increased", "decreased"),
-                     abs(round(first_variation, 2))
-                   ),
-                   ifelse(prev_year != first_year,
-                          sprintf(
-                            " (with %s of %s points since %s).",
-                            ifelse(prev_variation >= 0,
-                                   "an increase",
-                                   "a decrease"),
-                            prev_variation,
-                            prev_year),
-                          "."
-                    )
-                 ),
-                 ""
-          ),
-          sprintf(
-            paste0("<br/>%s is its strongest %s with %s points,",
-                   " whereas %s (%s points) is the one with the most room for",
-                   " improvement."),
-            best_domain %>% pull(Indicator),
-            ifelse(is_gei, "domain", "indicator"),
-            best_domain %>% pull(!!year),
-            worst_domain %>% pull(Indicator),
-            worst_domain %>% pull(!!year)
           )
         )
-      )
+      )),
+      if (year != first_year) {
+        tags$li(HTML(
+          paste0(
+            sprintf("Since %s, its score %s %s by %s points",
+                    first_year,
+                    ifelse(is_current_year, "has", ""),
+                    ifelse(first_variation >= 0, "increased", "decreased"),
+                    abs(round(first_variation, 2))
+            ),
+            ifelse(prev_year != first_year,
+              sprintf(" (with %s of %s points since %s).",
+                      ifelse(prev_variation >= 0,
+                             "an increase",
+                             "a decrease"),
+                      prev_variation,
+                      prev_year
+              ),
+              "."
+            )
+          )
+        ))
+      },
+      tags$li(HTML(
+        sprintf("<b>%s</b> %s its strongest %s with %s points, whereas <b>%s</b> 
+                  (%s points) %s the one with the greatest inequality.",
+                best_indicator,
+                ifelse(is_current_year, "is", "was"),
+                ifelse(is_gei, "domain", "indicator"),
+                best_indicator_score,
+                worst_indicator,
+                worst_indicator_score,
+                ifelse(is_current_year, "is", "was")
+        )
+      )),
+      if (year != first_year) {
+        tags$li(HTML(
+          ifelse(most_improved_indicator_score < 0,
+                 sprintf("Compared to the previous edition, all the %s %s 
+                           worsened.",
+                         ifelse(is_gei, "domains", "indicators"),
+                         ifelse(is_current_year, "have", "")
+                 ),
+                 sprintf("Compared to the previous edition, <b>%s</b> %s the
+                           most improved %s with an increase of %s points.",
+                         most_improved_indicator,
+                         ifelse(is_current_year, "is", "was"),
+                         ifelse(is_gei, "domain", "indicator"),
+                         most_improved_indicator_score
+                 )
+          )
+        ))
+      }
     )
   })
   
@@ -1073,7 +1208,7 @@ function(input, output, session) {
                   )
                 }
               },
-              height = "380px",
+              #height = "360px",
               style = list(
                 fontSize = 12
               ),
@@ -1569,6 +1704,200 @@ function(input, output, session) {
               pagination = FALSE,
               columns = col_defs,
               height = "450px",
+              style = list(
+                fontSize = 12
+              )
+    )
+  })
+  
+  
+  
+  ###================= About =================###
+  
+  ##----------- Reactive expressions -----------##
+  
+  # Reactive expression for the data used in the info subdomain selector
+  # It returns the subdomains for the picked domain
+  info_subdomains_r <- reactive({
+    indicator_id <- gei_full_indicators %>%
+      filter(`Indicator (s)` == input$info_domain) %>%
+      pull(Id)
+    
+    gei_full_indicators %>% 
+      filter(`Parent Id` == indicator_id) %>% 
+      select("Indicator (s)") %>%
+      unlist(use.names = FALSE)
+  })
+  
+  # Reactive expression for the data used in the info indicators table
+  # It returns the indicators metadata for the picked subdomain
+  info_indicators_metadata_r <- reactive({
+    gei_metadata %>% 
+      filter(Subdomain == input$info_subdomain) %>% 
+      select(Indicator, Description)
+  })
+  
+  ##------------- Event observers -------------##
+  
+  observeEvent(input$info_domain, {
+    # It updates the choices of the subdomain selector with the subdomains
+    # of the picked domain
+    updateRadioGroupButtons(session, "info_subdomain",
+                      label = NULL,
+                      choices = info_subdomains_r()
+    )
+    
+    # It adapts the color of the domain info container taking into account
+    # the selected domain
+    runjs(paste0(
+      '$("#domain_info_container .box").css("border-color", "',
+      gei_domain_color_mapping[[input$info_domain]]
+      ,'");'
+    ))
+  })
+  
+  
+  ##----------------- Outputs -----------------##
+  
+  output$gei_info_html_text <- renderUI({
+    HTML("<img id = 'gei_info_image'
+         src = 'images/Gender_Equality_Index_domains.png'
+         alt = 'Gender Equality Index'>
+         The <span id='gei_info_name'>Gender Equality Index</span> is an
+         important policy-making tool to measure the progress of gender equality
+         in the European Union over time. It is
+         developed by the <a href = 'https://eige.europa.eu' target = '_blank'>
+         European Institute for Gender Equality (EIGE)</a>. Each year, it gives
+         the EU and the Member States (including the United Kingdom) a score
+         from 1 to 100. A score of 100 would mean that a country had reached
+         full equality between women and men.
+         <br/>The scores are based on the gaps between women and men and levels
+         of achievement in six core domains: work, money, knowledge, time, power
+         and health, and their sub-domains; which are analyzed through a
+         complete set of key indicators.
+         <br/>The Index gives visibility to areas that need improvement and
+         supports policy makers to design more effective gender equality
+         measures.
+         <br/>Since the first edition in 2013, the Gender Equality Index has
+         tracked and reported progress by providing a comprehensive measure of
+         gender equality, tailored to fit the EU’s policy goals. It reveals both
+         progress and setbacks, and explores what can be done better to seize
+         opportunities for change.
+         <br/>")
+  })
+  
+  output$domain_info_html_text <- renderUI({
+    switch(input$info_domain,
+           "WORK" = {
+             HTML(sprintf(
+               "The domain of <span class = 'domain_info_name'
+                style = 'color:%s'>work</span> measures the extent to which
+                women and men can benefit from equal access to employment and
+                good working conditions.
+                <br/> Its score is determined through five indicators grouped
+                into two subdomains:",
+               gei_domain_color_mapping[[input$info_domain]]
+             ))
+           },
+           "MONEY" = {
+             HTML(sprintf(
+               "The domain of <span class = 'domain_info_name'
+                style = 'color:%s'>money</span> measures gender inequalities in
+                access to financial resources and women’s and men’s economic
+                situation.
+                <br/> Its score is determined through four indicators grouped
+                into two subdomains:",
+               gei_domain_color_mapping[[input$info_domain]]
+             ))
+           },
+           "KNOWLEDGE" = {
+             HTML(sprintf(
+               "The domain of <span class = 'domain_info_name'
+                style = 'color:%s'>knowledge</span> measures gender inequalities
+                in educational attainment, participation in education and
+                training over the life course and gender segregation.
+                <br/> Its score is determined through three indicators grouped
+                into two subdomains:",
+               gei_domain_color_mapping[[input$info_domain]]
+             ))
+           },
+           "TIME" = {
+             HTML(sprintf(
+               "The domain of <span class = 'domain_info_name'
+                style = 'color:%s'>time</span> measures gender inequalities in
+                allocation of time spent doing care and domestic work and social
+                activities.
+                <br/> Its score is determined through four indicators grouped
+                into two subdomains:",
+               gei_domain_color_mapping[[input$info_domain]]
+             ))
+           },
+           "POWER" = {
+             HTML(sprintf(
+               "The domain of <span class = 'domain_info_name'
+                style = 'color:%s'>power</span> measures gender equality in
+                decision-making positions across the political, economic and
+                social spheres.
+                <br/> Its score is determined through eight indicators grouped
+                into three subdomains:",
+               gei_domain_color_mapping[[input$info_domain]]
+             ))
+           },
+           "HEALTH" = {
+             HTML(sprintf(
+               "The domain of <span class = 'domain_info_name'
+                style = 'color:%s'>health</span> measures gender equality in
+                three health -related aspects: health status, health behaviour
+                and access to health services. 
+                <br/> Its score is determined through seven indicators grouped
+                into three subdomains:",
+               gei_domain_color_mapping[[input$info_domain]]
+             ))
+           },
+    )
+  })
+  
+  output$domain_select_style <- renderUI({
+    tags$head(tags$style(
+      HTML(sprintf(
+        "#info_subdomain .btn {
+           color: %1$s;
+           border-color: %2$s;
+         }
+        
+        #info_subdomain .btn:focus,
+        #info_subdomain .btn:hover,
+        #info_subdomain .active,
+        #info_subdomain .active:focus,
+        #info_subdomain .active:hover {
+           color: %3$s;
+           font-weight: bold;
+           background-color: %2$s;
+           border: none;
+         }",
+        apply_alpha_to_color(gei_domain_color_mapping[[input$info_domain]], 0.7),
+        apply_alpha_to_color(gei_domain_color_mapping[[input$info_domain]], 0.2),
+        gei_domain_color_mapping[[input$info_domain]]
+      ))
+    ))
+  })
+  
+  output$info_indicators_metadata_table <- renderReactable({
+    col_defs <- list(
+      Indicator = colDef(
+        maxWidth = 150,
+        headerStyle = list(
+          borderColor = gei_domain_color_mapping[[input$info_domain]])
+      )
+    )
+    reactable(info_indicators_metadata_r(),
+              sortable = FALSE,
+              defaultColDef = colDef(
+                headerStyle = list(
+                  borderColor = gei_domain_color_mapping[[input$info_domain]]
+                )
+              ),
+              columns = col_defs,
               style = list(
                 fontSize = 12
               )

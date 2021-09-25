@@ -1,6 +1,6 @@
 ################### global.R ###################
 # @author Víctor Julio Sánchez Pollo           #
-# @version 18/09/2021                          #
+# @version 25/09/2021                          #
 ################################################
 
 ###=============== Libraries ===============###
@@ -52,6 +52,10 @@ current_year <- max(gei_years)
 
 # Default year range (it is defined to the full range)
 default_year_range <- c(min(gei_years), max(gei_years))
+
+# Countries preceded by "the"
+countries_with_the <- c("European Union 28", "Czech Rep.", "Netherlands",
+                        "United Kingdom")
 
 
 ###=========== Colors & Palettes ===========###
@@ -352,11 +356,17 @@ $(document).ready(function(){
   });
   
   // Color styling in domains buttons
-  $('#comp_domain [value=\"WORK\"]').parent().addClass('work_button');
-  $('#comp_domain [value=\"MONEY\"]').parent().addClass('money_button');
-  $('#comp_domain [value=\"KNOWLEDGE\"]').parent().addClass('knowledge_button');
-  $('#comp_domain [value=\"TIME\"]').parent().addClass('time_button');
-  $('#comp_domain [value=\"POWER\"]').parent().addClass('power_button');
-  $('#comp_domain [value=\"HEALTH\"]').parent().addClass('health_button');
+  $('.domains_buttons_container [value=\"WORK\"]').parent().
+    addClass('work_button');
+  $('.domains_buttons_container [value=\"MONEY\"]').parent().
+    addClass('money_button');
+  $('.domains_buttons_container [value=\"KNOWLEDGE\"]').parent().
+    addClass('knowledge_button');
+  $('.domains_buttons_container [value=\"TIME\"]').parent().
+    addClass('time_button');
+  $('.domains_buttons_container [value=\"POWER\"]').parent().
+    addClass('power_button');
+  $('.domains_buttons_container [value=\"HEALTH\"]').parent().
+    addClass('health_button');
 });
 "

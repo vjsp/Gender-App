@@ -1,6 +1,6 @@
 ##################### ui.R #####################
 # @author Víctor Julio Sánchez Pollo           #
-# @version 18/09/2021                          #
+# @version 25/09/2021                          #
 ################################################
 
 dashboardPage(
@@ -22,35 +22,14 @@ dashboardPage(
       menuItem("Trend Explorer", tabName = "trend", icon = icon("chart-line")),
       conditionalPanel("input.sidebar_menu == 'trend'",
         class = "sidebar_conditional_panel",
-        sliderTextInput("trend_years",
-          label = h5("Select years range"),
-          choices = gei_years,
-          selected = default_year_range
-        ),
-        pickerInput("trend_countries",
-          label = h5("Select countries"), 
-          choices = unique(levels(gei_data$Country)),
-          selected = c("European Union 28", "France", "Greece", "Spain",
-                       "Sweden","United Kingdom"),
-          options = list(`actions-box` = TRUE,
-                         `dropup-auto` = FALSE),
-          multiple = TRUE
-        )
+        uiOutput("trend_years_slider"),
+        uiOutput("trend_countries_picker")
       ),
       menuItem("Country Explorer", tabName = "country", icon = icon("flag")),
       conditionalPanel("input.sidebar_menu == 'country'",
         class = "sidebar_conditional_panel",
-        sliderTextInput("country_year",
-          label = h5("Select year"),
-          choices = gei_years,
-          selected = current_year,
-          animate = FALSE
-        ),
-        pickerInput("country_country",
-          label = h5("Select country"), 
-          choices = unique(levels(gei_data$Country)),
-          selected = c("Spain"),
-        )
+        uiOutput("country_year_slider"),
+        uiOutput("country_country_picker")
       ),
       menuItem("Country Comparator", tabName = "comparator",
                icon = icon("balance-scale")),
@@ -58,22 +37,8 @@ dashboardPage(
       conditionalPanel("input.sidebar_menu == 'data' &&
                        input.data_tabset_panel == 'Data table'",
         class = "sidebar_conditional_panel",
-        pickerInput("data_years",
-          label = h5("Select years"),
-          choices = gei_years,
-          selected = gei_years,
-          options = list(`actions-box` = TRUE,
-                         `dropup-auto` = FALSE),
-          multiple = TRUE
-        ),
-        pickerInput("data_countries",
-          label = h5("Select countries"), 
-          choices = unique(levels(gei_data$Country)),
-          selected = unique(levels(gei_data$Country)),
-          options = list(`actions-box` = TRUE,
-                         `dropup-auto` = FALSE),
-          multiple = TRUE
-        )
+        uiOutput("data_years_picker"),
+        uiOutput("data_countries_picker")
       ),
       menuItem("About", tabName = "about", icon = icon("book")),
       div(
@@ -182,13 +147,13 @@ dashboardPage(
       ),
       # Country Explorer content
       tabItem(tabName = "country",
-        div(id = "country_explorer_box_container",
+        fluidRow(id = "country_explorer_box_container",
           box(
             width = 12,
             fluidRow(
               column(width = 4,
                 htmlOutput("country_html_name"),
-                highchartOutput("country_trend_chart", height = 180)
+                highchartOutput("country_trend_chart", height = 200)
               ),
               column(width = 4,
                 htmlOutput("country_domain_html_title"),
@@ -245,14 +210,14 @@ dashboardPage(
             )
           )
         ),
-        fluidRow(id = "domains_buttons_container",
+        fluidRow(class = "domains_buttons_container",
           radioGroupButtons(
             inputId = "comp_domain",
             choices = gei_indicators %>%
               filter(Type == "Domain") %>%
               pull("Indicator (s)"),
             justified = TRUE
-          ),
+          )
         ),
         fluidRow(id = "domain_comparator_container",
           box(width = 12,
@@ -304,6 +269,63 @@ dashboardPage(
           tabsetPanel(id = "data_tabset_panel",
             tabPanel("Data table", reactableOutput("data_table")),
             tabPanel("Metadata table", reactableOutput("metadata_table"))
+          )
+        )
+      ),
+      # About content
+      tabItem(tabName = "about",
+        fluidRow(id = "gei_info_container",
+          box(width = 12,
+            column(width = 9,
+              htmlOutput("gei_info_html_text")
+            ),
+            column(id = "value_boxes_section", width = 3,
+                box(width = 12,
+                    div(class = "box_value", 28),
+                    div(class = "box_subtitle", "countries")
+                ),
+                box(width = 12,
+                    div(class = "box_value", 6),
+                    div(class = "box_subtitle", "domains")
+                ),
+                box(width = 12,
+                    div(class = "box_value", 31),
+                    div(class = "box_subtitle", "indicators")
+                ),
+                box(width = 12,
+                    div(class = "box_value", 5),
+                    div(class = "box_subtitle", "editions")
+                )
+            )
+          )
+        ),
+        fluidRow(class = "domains_buttons_container",
+          radioGroupButtons(
+            inputId = "info_domain",
+            choices = gei_indicators %>%
+              filter(Type == "Domain") %>%
+              pull("Indicator (s)"),
+            justified = TRUE
+          )
+        ),
+        fluidRow(id = "domain_info_container",
+          box(width = 12,
+            column(id = "domain_info_section", width = 4,
+              htmlOutput("domain_info_html_text"),
+              # selectInput(inputId = "info_subdomain",
+              #             label = NULL,
+              #             choices = NULL
+              # ),
+              radioGroupButtons(inputId = "info_subdomain",
+                                label = NULL,
+                                choices = "",
+                                direction = "vertical"
+              ),
+              uiOutput("domain_select_style")
+            ),
+            column(width = 8,
+              reactableOutput("info_indicators_metadata_table")
+            )
           )
         )
       )
