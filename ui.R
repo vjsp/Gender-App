@@ -28,10 +28,10 @@ dashboardPage(
       menuItem("Country Explorer", tabName = "country", icon = icon("flag")),
       conditionalPanel("input.sidebar_menu == 'country'",
         class = "sidebar_conditional_panel",
-        uiOutput("country_year_slider"),
-        uiOutput("country_country_picker")
+        uiOutput("country_country_picker"),
+        uiOutput("country_year_slider")
       ),
-      menuItem("Country Comparator", tabName = "comparator",
+      menuItem("Comparator", tabName = "comparator",
                icon = icon("balance-scale")),
       menuItem("Data Explorer", tabName = "data", icon = icon("folder-open")),
       conditionalPanel("input.sidebar_menu == 'data' &&

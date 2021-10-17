@@ -8,7 +8,6 @@
 # Used repositories
 default_repos = "http://cran.us.r-project.org"
 # Libraries installation and loading
-if(!require(data.table)) install.packages("data.table", repos = default_repos)
 if(!require(dplyr)) install.packages("dplyr", repos = default_repos)
 if(!require(formattable)) install.packages("formattable",repos = default_repos)
 if(!require(geojsonio)) install.packages("geojsonio", repos = default_repos)
@@ -39,7 +38,7 @@ gei_full_indicators <- readRDS(file = "data/GEI_indicators.rds")
 gei_indicators <- gei_full_indicators %>% filter(Type != "Metric")
 
 # GEI data with all data rounded out to 2 decimals
-gei_data <- gei_data %>% mutate_if(is.numeric, round, digits=2)
+gei_data <- gei_data %>% mutate_if(is.numeric, round, digits = 2)
 
 
 ###====== Variables and initial values ======###
@@ -56,6 +55,69 @@ default_year_range <- c(min(gei_years), max(gei_years))
 # Countries preceded by "the"
 countries_with_the <- c("European Union 28", "Czech Rep.", "Netherlands",
                         "United Kingdom")
+
+
+###============ Info html texts ============###
+
+gei_html_text <- "<img id = 'gei_info_image' 
+  src = 'images/Gender_Equality_Index_domains.png'
+  alt = 'Gender Equality Index'>
+  The <span id='gei_info_name'>Gender Equality Index</span> is an important
+  policy-making tool to measure the progress of gender equality in the European
+  Union over time. It is developed by the <a href = 'https://eige.europa.eu'
+  target = '_blank'>European Institute for Gender Equality (EIGE)</a>. Each
+  year, it gives the EU and the Member States (including the United Kingdom) a
+  score from 1 to 100. A score of 100 would mean that a country had reached full
+  equality between women and men.
+  <br/>The scores are based on the gaps between women and men and levels of
+  achievement in six core domains: work, money, knowledge, time, power and 
+  health, and their sub-domains; which are analyzed through a complete set of
+  key indicators.
+  <br/>The Index gives visibility to areas that need improvement and supports
+  policy makers to design more effective gender equality measures.
+  <br/>Since the first edition in 2013, the Gender Equality Index has tracked
+  and reported progress by providing a comprehensive measure of gender equality,
+  tailored to fit the EU’s policy goals. It reveals both progress and setbacks,
+  and explores what can be done better to seize opportunities for change.
+  <br/>"
+
+work_html_text <- "The domain of <span class = 'domain_info_name' 
+  style = 'color:%s'>work</span> measures the extent to which women and men can
+  benefit from equal access to employment and good working conditions.
+  <br/> Its score is determined through five indicators grouped into two
+  subdomains:"
+
+money_html_text <- "The domain of <span class = 'domain_info_name'
+  style = 'color:%s'>money</span> measures gender inequalities in access to
+  financial resources and women’s and men’s economic situation.
+  <br/> Its score is determined through four indicators grouped into two
+  subdomains:"
+
+knowledge_html_text <- "The domain of <span class = 'domain_info_name'
+  style = 'color:%s'>knowledge</span> measures gender inequalities in
+  educational attainment, participation in education and training over the life
+  course and gender segregation.
+  <br/> Its score is determined through three indicators grouped into two
+  subdomains:"
+
+time_html_text <- "The domain of <span class = 'domain_info_name'
+  style = 'color:%s'>time</span> measures gender inequalities in allocation of
+  time spent doing care and domestic work and social activities.
+  <br/> Its score is determined through four indicators grouped into two
+  subdomains:"
+
+power_html_text <- "The domain of <span class = 'domain_info_name'
+  style = 'color:%s'>power</span> measures gender equality in decision-making
+  positions across the political, economic and social spheres.
+  <br/> Its score is determined through eight indicators grouped into three
+  subdomains:"
+
+health_html_text <- "The domain of <span class = 'domain_info_name'
+  style = 'color:%s'>health</span> measures gender equality in three health
+  related aspects: health status, health behaviour and access to health
+  services. 
+  <br/> Its score is determined through seven indicators grouped into three
+  subdomains:"
 
 
 ###=========== Colors & Palettes ===========###
@@ -146,20 +208,6 @@ center_rt_theme <- reactableTheme(
 
 ###========== Auxiliary functions ==========###
 
-# Function to fix the item selection issue when using input elements in sidebar
-# @param menu_item - Menu item
-# @param tab_name - Tab name
-# @return A list of dataframes
-convert_menu_item <- function(menu_item,tab_name) {
-  menu_item$children[[1]]$attribs['data-toggle'] <- "tab"
-  menu_item$children[[1]]$attribs['data-value'] <- tab_name
-  if (length(menu_item$attribs$class) > 0 &&
-      menu_item$attribs$class == "treeview") {
-    menu_item$attribs$class = NULL
-  }
-  menu_item
-}
-
 # Function to use the color palette with formattable
 # @return A formatter using the color palette to style the text
 format_color_formattable <- function (...) {
@@ -173,7 +221,7 @@ format_color_formattable <- function (...) {
 # @param digits - The number of digits
 # @return The rounded up number
 ceiling_digits <- function(x, digits) {
-  round(x + 5*10^(-digits -1), digits)
+  round(x + 5 * 10^(-digits -1), digits)
 }
 
 # Function to determine the max value in gauge charts
@@ -188,7 +236,7 @@ get_max_value <- function(indicator) {
     select(gei_full_indicators %>% 
              filter(`Parent Id` == indicator_id) %>% 
              select("Indicator (s)") %>%
-             unlist(use.names=FALSE))
+             unlist(use.names = FALSE))
   max_value <- 100 # Default value
   
   if (grepl("(PPS)", indicator, fixed = TRUE)) {

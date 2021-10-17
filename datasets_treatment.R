@@ -41,13 +41,13 @@ eu_regions_df <- data.frame("Country code" = "EU28",
 
 # Function to read all sheets from excel file
 # @param xlsx_file - File with .xlsx extension
-# @return A list of dataframes
+# @return A list of data frames
 read_all_sheets <- function(xlsx_file, ...) {
   sheet_names <- openxlsx::getSheetNames(xlsx_file)
   sheet_list <- as.list(rep(NA, length(sheet_names)))
   names(sheet_list) <- sheet_names
   for (sn in sheet_names) {
-    sheet_list[[sn]] <- openxlsx::read.xlsx(xlsx_file, sheet=sn, ...)
+    sheet_list[[sn]] <- openxlsx::read.xlsx(xlsx_file, sheet = sn, ...)
   }
   sheet_list
 }
@@ -78,7 +78,7 @@ gei_metadata_df <- data.frame(gei_file_data["Metadata"]) %>%
   group_by(X1, X2, X3, X4) %>%
   mutate(X5 = paste0(X5, collapse = " ")) %>%
   unique() %>%
-  # Set column names and remove those with unnecessary info (header and
+  # Set column names and remove rows with unnecessary info (header and
   # additional variable)
   `colnames<-`(.[1,]) %>%
   ungroup() %>%
