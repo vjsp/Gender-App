@@ -1,6 +1,6 @@
 ################### server.R ###################
 # @author Víctor Julio Sánchez Pollo           #
-# @version 25/09/2021                          #
+# @version 17/10/2021                          #
 ################################################
 
 function(input, output, session) {
