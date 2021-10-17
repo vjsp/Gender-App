@@ -17,9 +17,11 @@ if(!require(magrittr)) install.packages("magrittr", repos = default_repos)
 if(!require(openxlsx)) install.packages("openxlsx", repos = default_repos)
 if(!require(reactable)) install.packages("reactable", repos = default_repos)
 if(!require(shiny)) install.packages("shiny", repos = default_repos)
-if(!require(shinydashboard)) install.packages("shinydashboard", repos = default_repos)
+if(!require(shinydashboard)) install.packages("shinydashboard",
+                                              repos = default_repos)
 if(!require(shinyjs)) install.packages("shinyjs", repos = default_repos)
-if(!require(shinyWidgets)) install.packages("shinyWidgets", repos = default_repos)
+if(!require(shinyWidgets)) install.packages("shinyWidgets",
+                                            repos = default_repos)
 if(!require(sparkline)) install.packages("sparkline", repos = default_repos)
 if(!require(tidyr)) install.packages("tidyr", repos = default_repos)
 

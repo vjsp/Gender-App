@@ -170,7 +170,7 @@ dashboardPage(
           )
         )
       ),
-      # Country Comparator content
+      # Comparator content
       tabItem(tabName = "comparator",
         fluidRow(id = "gei_comparator_container",
           box(width = 12,
