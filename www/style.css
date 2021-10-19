@@ -227,7 +227,7 @@
   -o-transform: translateX(-40%);
   transform: translateX(-40%);
   cursor: move;
-  opacity: 0.7;
+  opacity: 0.8;
 }
 
 .selectize-input > * {
@@ -708,6 +708,7 @@
 
 #download_data {
   width: 140px;
+  height: -moz-fit-content;
   height: fit-content;
   margin-bottom: 5px;
   color: rgb(255,255,255);
