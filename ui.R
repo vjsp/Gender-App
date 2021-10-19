@@ -312,10 +312,6 @@ dashboardPage(
           box(width = 12,
             column(id = "domain_info_section", width = 4,
               htmlOutput("domain_info_html_text"),
-              # selectInput(inputId = "info_subdomain",
-              #             label = NULL,
-              #             choices = NULL
-              # ),
               radioGroupButtons(inputId = "info_subdomain",
                                 label = NULL,
                                 choices = "",
