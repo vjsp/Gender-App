@@ -646,6 +646,8 @@ function(input, output, session) {
   })
   
   output$trend_var_table <- renderReactable({
+    shiny::validate(need(input$trend_countries != "",
+                         message = "Please, select any country"))
     # Define data
     data <- trend_indicator_var_table_data_r()
     sparkline_data <- trend_sparkline_data_r()
