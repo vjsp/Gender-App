@@ -138,7 +138,8 @@ dashboardPage(
           ),
           fluidRow(id = "trend_tabs_row", class = "tabs_row",
             tabsetPanel(id = "trend_tabset_panel",
-              tabPanel("Trend graph",  highchartOutput("trend_chart")),
+              tabPanel("Trend graph",  highchartOutput("trend_chart",
+                                                       height = 475)),
               tabPanel("Scores table", reactableOutput("trend_score_table")),
               tabPanel("Variations table", reactableOutput("trend_var_table"))
             )
